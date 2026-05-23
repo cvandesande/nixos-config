@@ -17,6 +17,9 @@
     gajim
     epsonscan2
     fastfetch
+    talosctl
+    kubectl
+    kubernetes-helm
 
     # Development and CLI tools
     git
@@ -28,6 +31,7 @@
     zed-editor
     sops
     gh
+    ripgrep
 
     # Filesystem, encryption, and install support
     btrfs-progs
