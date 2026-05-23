@@ -40,10 +40,27 @@
   # Containers
   virtualisation.docker.enable = true;
 
-  # Scanning
-  hardware.sane = {
-    enable = true;
-    extraBackends = [ pkgs.epsonscan2 ];
+  # Hardware
+  hardware = {
+    bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+      settings = {
+        General = {
+          # Shows battery charge of connected devices on supported
+          # Bluetooth adapters. Defaults to 'false'.
+          Experimental = true;
+          # When enabled other devices can connect faster to us, however
+          # the tradeoff is increased power consumption. Defaults to
+          # 'false'.
+          FastConnectable = true;
+        };
+      };
+    };
+    sane = {
+      enable = true;
+      extraBackends = [ pkgs.epsonscan2 ];
+    };
   };
 
   # Use gpg-agent as the SSH agent so SSH keys can live on a YubiKey.

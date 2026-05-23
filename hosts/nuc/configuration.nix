@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   imports = [
@@ -24,6 +24,8 @@
 
       efi.canTouchEfiVariables = true;
     };
+
+    kernelPackages = pkgs.linuxPackages_latest;
 
     initrd = {
       # Required for systemd-cryptenroll TPM2/FIDO2 LUKS unlock.

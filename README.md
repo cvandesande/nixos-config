@@ -1,10 +1,5 @@
 # NixOS installs
 
-This repository contains NixOS configurations for:
-
-- `liltig` — Framework Desktop
-- `nuc` — Intel NUC test host
-
 The install uses:
 
 - Disko for declarative disk partitioning
@@ -14,9 +9,6 @@ The install uses:
 - systemd-boot
 - KDE Plasma
 
-> **Warning:** the Disko step is destructive. It will repartition and format the
-> configured disk.
-
 ## Host targets
 
 The shared Disko layout lives in:
@@ -24,7 +16,6 @@ The shared Disko layout lives in:
 ```text
 modules/disko/luks-btrfs.nix
 ```
-
 Each host has a small `disk-config.nix` that supplies only its target disk.
 
 Use the Framework Desktop target for the real install:
@@ -37,29 +28,6 @@ Use the NUC target for test installs:
 
 ```bash
 .#nuc
-```
-
-Before running Disko on the NUC, edit:
-
-```text
-hosts/nuc/disk-config.nix
-```
-
-and replace:
-
-```text
-/dev/disk/by-id/REPLACE_WITH_NUC_DISK
-```
-
-with the NUC's real whole-disk `/dev/disk/by-id/...` path.
-
-For a NUC dry run:
-
-```bash
-nix --experimental-features "nix-command flakes" run github:nix-community/disko -- \
-  --mode disko \
-  --flake .#nuc \
-  --dry-run
 ```
 
 ## 1. Boot the minimal NixOS ISO
@@ -298,4 +266,91 @@ YubiKey, verify it with:
 gpg --card-status
 gpg-connect-agent updatestartuptty /bye
 ssh-add -L
+```
+
+## Daily rebuild flow
+
+For normal config changes on an already-installed system, use this flow:
+
+```bash
+cd /etc/nixos
+```
+
+Think: **check, build, test, switch**.
+
+```bash
+# 1. Check that every flake output evaluates.
+nix flake check --no-build
+
+# 2. Dry-run the NUC system build.
+nix build .#nixosConfigurations.nuc.config.system.build.toplevel --dry-run
+
+# 3. Build the NUC generation, but do not activate it.
+nixos-rebuild build --flake .#nuc
+
+# 4. Activate it temporarily until the next reboot.
+sudo nixos-rebuild test --flake .#nuc
+
+# 5. Make it the active and default boot generation.
+sudo nixos-rebuild switch --flake .#nuc
+```
+
+Most small edits use only:
+
+```bash
+nix flake check --no-build
+nixos-rebuild build --flake .#nuc
+sudo nixos-rebuild switch --flake .#nuc
+```
+
+Use `test` when changing services, hardware, boot, networking, or anything
+where you want one reboot to roll back automatically if the result is bad.
+
+## Daily update flow
+
+Flakes update in two separate steps:
+
+1. Update `flake.lock`.
+2. Rebuild the system from the new lock file.
+
+`flake.nix` chooses the branch, such as `nixos-unstable` or `nixos-25.11`.
+`flake.lock` pins the exact commit that actually gets built.
+
+Update all flake inputs:
+
+```bash
+cd /etc/nixos
+nix flake update
+```
+
+Then rebuild with the normal flow:
+
+```bash
+nix flake check --no-build
+nixos-rebuild build --flake .#nuc
+sudo nixos-rebuild test --flake .#nuc
+sudo nixos-rebuild switch --flake .#nuc
+```
+
+To update only `nixpkgs`:
+
+```bash
+nix flake lock --update-input nixpkgs
+```
+
+Stable branches, such as `nixos-25.11`, mostly receive security fixes, bug
+fixes, and conservative package updates. `nixos-unstable` receives newer
+kernels, desktop environments, packages, and module changes, with more risk of
+temporary breakage.
+
+Memory version:
+
+```text
+update lock -> check -> build -> test -> switch
+```
+
+Rollback if a switched generation is bad:
+
+```bash
+sudo nixos-rebuild switch --rollback
 ```

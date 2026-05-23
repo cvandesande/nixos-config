@@ -16,6 +16,7 @@
     obsidian
     gajim
     epsonscan2
+    fastfetch
 
     # Development and CLI tools
     git
@@ -26,6 +27,7 @@
     curl
     zed-editor
     sops
+    gh
 
     # Filesystem, encryption, and install support
     btrfs-progs
