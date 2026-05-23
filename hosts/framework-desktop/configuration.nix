@@ -21,17 +21,15 @@
   # Keep password unlock working first; add TPM enrollment only after the base install boots.
   boot.initrd.systemd.enable = true;
 
+  # Weekly SSD/NVMe TRIM. This is enabled by default in current NixOS, but kept
+  # explicit here because the disk layout intentionally uses LUKS + Btrfs.
   services.fstrim.enable = true;
 
+  # Monthly Btrfs scrub. Scrub verifies checksums and is independent from TRIM.
   services.btrfs.autoScrub = {
     enable = true;
     interval = "monthly";
     fileSystems = [ "/" ];
-  };
-
-  zramSwap = {
-    enable = true;
-    memoryPercent = 50;
   };
 
   services.openssh.enable = lib.mkDefault true;
