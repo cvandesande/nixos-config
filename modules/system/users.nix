@@ -1,8 +1,8 @@
 { ... }:
 
 {
-  users.users.chris = {
+  users.users.cvandesande = {
     isNormalUser = true;
-    extraGroups = [ "wheel" "networkmanager" ];
+    extraGroups = [ "docker" "wheel" "networkmanager" ];
   };
 }

@@ -14,7 +14,7 @@
     let
       system = "x86_64-linux";
     in {
-      nixosConfigurations.framework-desktop = nixpkgs.lib.nixosSystem {
+      nixosConfigurations.liltig = nixpkgs.lib.nixosSystem {
         inherit system;
         modules = [
           disko.nixosModules.disko

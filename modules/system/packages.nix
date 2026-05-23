@@ -1,25 +1,43 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 {
+  nixpkgs.config.allowUnfreePredicate = pkg:
+    builtins.elem (lib.getName pkg) [
+      "obsidian"
+    ];
+
   environment.systemPackages = with pkgs; [
     # Desktop applications
     firefox
+    thunderbird
     onlyoffice-desktopeditors
     keepassxc
     nextcloud-client
+    obsidian
+    gajim
+    epsonscan2
 
     # Development and CLI tools
     git
     htop
     nodejs
-    vim
-    wget
-    curl
     bubblewrap
+    vim
+    curl
+    zed-editor
+    sops
 
     # Filesystem, encryption, and install support
     btrfs-progs
     compsize
     cryptsetup
+    tpm2-tools
+
+    # YubiKey, FIDO2, and GPG/SSH-agent support
+    gnupg
+    libfido2
+    pinentry-qt
+    yubikey-manager
+    yubikey-personalization
   ];
 }

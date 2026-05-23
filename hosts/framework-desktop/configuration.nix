@@ -10,18 +10,36 @@
     ../../modules/system/users.nix
   ];
 
-  networking.hostName = "framework-desktop";
+  networking.hostName = "liltig";
 
   time.timeZone = "Europe/Dublin";
 
-  boot.loader.systemd-boot.enable = true;
-  boot.loader.efi.canTouchEfiVariables = true;
+  boot = {
+    loader = {
+      systemd-boot = {
+        enable = true;
+        configurationLimit = 10;
+        editor = false;
+      };
 
-  # Required for TPM2-based LUKS unlock later.
-  # Keep password unlock working first; add TPM enrollment only after the base install boots.
-  boot.initrd.systemd.enable = true;
+      efi.canTouchEfiVariables = true;
+    };
+
+    initrd = {
+      # Required for systemd-cryptenroll TPM2/FIDO2 LUKS unlock.
+      systemd.enable = true;
+
+      # These options are used only after matching LUKS2 token slots have been
+      # enrolled with systemd-cryptenroll. The original passphrase remains a
+      # fallback unless you explicitly remove that LUKS slot.
+      luks.devices.crypted.crypttabExtraOpts = [
+        "tpm2-device=auto"
+        "fido2-device=auto"
+      ];
+    };
+  };
 
   # Change this only after reading the NixOS release notes for the release
   # used when the machine was first installed.
-  system.stateVersion = "26.05";
+  system.stateVersion = "25.11";
 }

@@ -5,11 +5,7 @@
     disk.main = {
       type = "disk";
 
-      # Replace this with the real NVMe device from:
-      #   ls -l /dev/disk/by-id/ | grep nvme
-      #
-      # Prefer a stable /dev/disk/by-id path over /dev/nvme0n1.
-      device = "/dev/disk/by-id/YOUR_NVME_DEVICE";
+      device = "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232";
 
       content = {
         type = "gpt";
@@ -34,7 +30,6 @@
 
               settings = {
                 allowDiscards = true;
-                fallbackToPassword = true;
               };
 
               content = {

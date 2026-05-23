@@ -1,18 +1,59 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 
 {
-  services.openssh.enable = lib.mkDefault true;
-
+  # Networking
   networking.networkmanager.enable = true;
 
-  # Weekly SSD/NVMe TRIM. This is enabled by default in current NixOS, but kept
-  # explicit here because the disk layout intentionally uses LUKS + Btrfs.
-  services.fstrim.enable = true;
+  services = {
+    # Remote access
+    openssh.enable = lib.mkDefault true;
 
-  # Monthly Btrfs scrub. Scrub verifies checksums and is independent from TRIM.
-  services.btrfs.autoScrub = {
+    # Desktop
+    displayManager = {
+      sddm = {
+        enable = true;
+        wayland.enable = true;
+      };
+
+      autoLogin = {
+        enable = true;
+        user = "cvandesande";
+      };
+    };
+    desktopManager.plasma6.enable = true;
+
+    # Storage maintenance
+    fstrim.enable = true;
+    btrfs.autoScrub = {
+      enable = true;
+      interval = "monthly";
+      fileSystems = [ "/" ];
+    };
+
+    # YubiKey/FIDO2 support
+    udev.packages = [
+      pkgs.libfido2
+      pkgs.yubikey-personalization
+    ];
+  };
+
+  # Containers
+  virtualisation.docker.enable = true;
+
+  # Scanning
+  hardware.sane = {
     enable = true;
-    interval = "monthly";
-    fileSystems = [ "/" ];
+    extraBackends = [ pkgs.epsonscan2 ];
+  };
+
+  # Use gpg-agent as the SSH agent so SSH keys can live on a YubiKey.
+  programs = {
+    ssh.startAgent = false;
+
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+      pinentryPackage = pkgs.pinentry-qt;
+    };
   };
 }
