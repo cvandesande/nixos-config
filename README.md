@@ -1,7 +1,9 @@
-# NixOS install for `liltig`
+# NixOS installs
 
-This repository contains the NixOS configuration for the Framework Desktop named
-`liltig`.
+This repository contains NixOS configurations for:
+
+- `liltig` — Framework Desktop
+- `nuc` — Intel NUC test host
 
 The install uses:
 
@@ -14,6 +16,51 @@ The install uses:
 
 > **Warning:** the Disko step is destructive. It will repartition and format the
 > configured disk.
+
+## Host targets
+
+The shared Disko layout lives in:
+
+```text
+modules/disko/luks-btrfs.nix
+```
+
+Each host has a small `disk-config.nix` that supplies only its target disk.
+
+Use the Framework Desktop target for the real install:
+
+```bash
+.#liltig
+```
+
+Use the NUC target for test installs:
+
+```bash
+.#nuc
+```
+
+Before running Disko on the NUC, edit:
+
+```text
+hosts/nuc/disk-config.nix
+```
+
+and replace:
+
+```text
+/dev/disk/by-id/REPLACE_WITH_NUC_DISK
+```
+
+with the NUC's real whole-disk `/dev/disk/by-id/...` path.
+
+For a NUC dry run:
+
+```bash
+nix --experimental-features "nix-command flakes" run github:nix-community/disko -- \
+  --mode disko \
+  --flake .#nuc \
+  --dry-run
+```
 
 ## 1. Boot the minimal NixOS ISO
 
@@ -86,14 +133,14 @@ filesystem entries:
 ```bash
 nixos-generate-config --no-filesystems --root /mnt
 cp /mnt/etc/nixos/hardware-configuration.nix \
-  /mnt/etc/nixos/hosts/framework-desktop/hardware-configuration.nix
+  /mnt/etc/nixos/hosts/liltig/hardware-configuration.nix
 rm /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/hardware-configuration.nix
 ```
 
 Inspect the generated host hardware config:
 
 ```bash
-vim /mnt/etc/nixos/hosts/framework-desktop/hardware-configuration.nix
+vim /mnt/etc/nixos/hosts/liltig/hardware-configuration.nix
 ```
 
 ## 7. Install NixOS
@@ -128,7 +175,7 @@ Commit the generated hardware configuration:
 ```bash
 cd /etc/nixos
 git status
-git add hosts/framework-desktop/hardware-configuration.nix flake.lock
+git add hosts/liltig/hardware-configuration.nix flake.lock
 git commit -m "Add liltig hardware configuration"
 git push
 ```

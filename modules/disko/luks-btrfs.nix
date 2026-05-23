@@ -1,18 +1,26 @@
-{ ... }:
+{
+  device,
+  encryptedName ? "crypted",
+  espSize ? "1G",
+  btrfsMountOptions ? [
+    "compress=zstd:3"
+    "noatime"
+  ],
+  allowDiscards ? true,
+}:
 
 {
   disko.devices = {
     disk.main = {
       type = "disk";
-
-      device = "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232";
+      inherit device;
 
       content = {
         type = "gpt";
 
         partitions = {
           ESP = {
-            size = "1G";
+            size = espSize;
             type = "EF00";
             content = {
               type = "filesystem";
@@ -26,10 +34,10 @@
             size = "100%";
             content = {
               type = "luks";
-              name = "crypted";
+              name = encryptedName;
 
               settings = {
-                allowDiscards = true;
+                inherit allowDiscards;
               };
 
               content = {
@@ -39,27 +47,27 @@
                 subvolumes = {
                   "@" = {
                     mountpoint = "/";
-                    mountOptions = [ "compress=zstd:3" "noatime" ];
+                    mountOptions = btrfsMountOptions;
                   };
 
                   "@home" = {
                     mountpoint = "/home";
-                    mountOptions = [ "compress=zstd:3" "noatime" ];
+                    mountOptions = btrfsMountOptions;
                   };
 
                   "@nix" = {
                     mountpoint = "/nix";
-                    mountOptions = [ "compress=zstd:3" "noatime" ];
+                    mountOptions = btrfsMountOptions;
                   };
 
                   "@log" = {
                     mountpoint = "/var/log";
-                    mountOptions = [ "compress=zstd:3" "noatime" ];
+                    mountOptions = btrfsMountOptions;
                   };
 
                   "@snapshots" = {
                     mountpoint = "/.snapshots";
-                    mountOptions = [ "compress=zstd:3" "noatime" ];
+                    mountOptions = btrfsMountOptions;
                   };
                 };
               };

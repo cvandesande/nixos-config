@@ -1,5 +1,5 @@
 {
-  description = "NixOS configuration for Framework Desktop";
+  description = "NixOS configurations";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,13 +14,24 @@
     let
       system = "x86_64-linux";
     in {
-      nixosConfigurations.liltig = nixpkgs.lib.nixosSystem {
-        inherit system;
-        modules = [
-          disko.nixosModules.disko
-          ./hosts/framework-desktop/disk-config.nix
-          ./hosts/framework-desktop/configuration.nix
-        ];
+      nixosConfigurations = {
+        liltig = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            disko.nixosModules.disko
+            ./hosts/liltig/disk-config.nix
+            ./hosts/liltig/configuration.nix
+          ];
+        };
+
+        nuc = nixpkgs.lib.nixosSystem {
+          inherit system;
+          modules = [
+            disko.nixosModules.disko
+            ./hosts/nuc/disk-config.nix
+            ./hosts/nuc/configuration.nix
+          ];
+        };
       };
     };
 }
