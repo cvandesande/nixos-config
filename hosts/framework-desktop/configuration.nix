@@ -42,8 +42,16 @@
   networking.networkmanager.enable = true;
 
   environment.systemPackages = with pkgs; [
-    git
+    firefox
+    onlyoffice-desktopeditors
+    htop
     vim
+    keepassxc
+    nextcloud-client
+    nodejs
+    bubblewrap
+
+    git
     wget
     curl
     btrfs-progs
