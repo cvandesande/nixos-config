@@ -53,8 +53,8 @@ nix-shell -p git vim
 ## 2. Clone the config
 
 ```bash
-git clone https://github.com/cvandesande/nixos-config.git /tmp/nixos-config
 cd /tmp/nixos-config
+git clone https://github.com/cvandesande/nixos-config.git
 ```
 
 ## 3. Verify the target disk
@@ -64,16 +64,6 @@ This config currently targets:
 ```text
 /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232
 ```
-
-Verify that it is the intended whole disk before continuing:
-
-```bash
-readlink -f /dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232
-lsblk -o NAME,SIZE,MODEL,SERIAL,TYPE,MOUNTPOINTS
-```
-
-Proceed only if the by-id path resolves to the intended Framework Desktop NVMe
-whole disk, not a partition.
 
 ## 4. Partition, encrypt, format, and mount
 
@@ -89,7 +79,7 @@ After this, the new system should be mounted under `/mnt`.
 
 ```bash
 mkdir -p /mnt/etc/nixos
-cp -a /tmp/nixos-config/. /mnt/etc/nixos/
+cp -a . /mnt/etc/nixos/
 cd /mnt/etc/nixos
 ```
 
@@ -100,21 +90,19 @@ filesystem entries:
 
 ```bash
 nixos-generate-config --no-filesystems --root /mnt
-cp /mnt/etc/nixos/hardware-configuration.nix \
-  /mnt/etc/nixos/hosts/liltig/hardware-configuration.nix
-rm /mnt/etc/nixos/configuration.nix /mnt/etc/nixos/hardware-configuration.nix
+cp hardware-configuration.nix hosts/liltig/hardware-configuration.nix
+rm configuration.nix hardware-configuration.nix
 ```
 
 Inspect the generated host hardware config:
 
 ```bash
-vim /mnt/etc/nixos/hosts/liltig/hardware-configuration.nix
+cat hosts/liltig/hardware-configuration.nix
 ```
 
 ## 7. Install NixOS
 
 ```bash
-cd /mnt/etc/nixos
 nixos-install --flake .#liltig
 ```
 
