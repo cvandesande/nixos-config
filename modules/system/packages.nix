@@ -20,6 +20,13 @@
     talosctl
     kubectl
     kubernetes-helm
+    unzip
+
+    # KDE
+    kdePackages.isoimagewriter
+    kdePackages.partitionmanager
+    vlc
+    hardinfo2
 
     # Development and CLI tools
     git
