@@ -24,6 +24,7 @@
           inherit system;
           modules = [
             disko.nixosModules.disko
+            lanzaboote.nixosModules.lanzaboote
             ./hosts/liltig/disk-config.nix
             ./hosts/liltig/configuration.nix
           ];

@@ -1,6 +1,10 @@
 { pkgs, ... }:
 
 {
+  boot.initrd.kernelModules = [
+    "i915"
+  ];
+
   hardware.graphics = {
     extraPackages = with pkgs; [
       intel-vaapi-driver
