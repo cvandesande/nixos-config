@@ -5,34 +5,33 @@
     pkg:
     builtins.elem (lib.getName pkg) [
       "obsidian"
+      "stremio-linux-shell"
     ];
 
   environment.systemPackages = with pkgs; [
     # Desktop applications
-    onlyoffice-desktopeditors
+    epsonscan2
+    fastfetch
+    gajim
     keepassxc
     nextcloud-client
     obsidian
-    gajim
-    epsonscan2
-    fastfetch
-    talosctl
-    kubectl
-    kubernetes-helm
+    onlyoffice-desktopeditors
+    stremio-linux-shell
     unzip
 
     # Hardware tools
-    pciutils
     libva-utils
+    pciutils
     vulkan-tools
 
     # KDE applications
     kdePackages.isoimagewriter
     kdePackages.partitionmanager
-    vlc
     hardinfo2
     nil
     nixd
+    vlc
 
     # Development and CLI tools
     htop
@@ -43,6 +42,9 @@
     sops
     gh
     ripgrep
+    talosctl
+    kubectl
+    kubernetes-helm
 
     # Filesystem, encryption, and install support
     btrfs-progs
