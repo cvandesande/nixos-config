@@ -6,7 +6,8 @@
   users.users.cvandesande.extraGroups = [ "networkmanager" ];
 
   services = {
-    fstrim.enable = true;
+    fstrim.enable = false;
+
     btrfs.autoScrub = {
       enable = true;
       interval = "monthly";

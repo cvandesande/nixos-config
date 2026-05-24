@@ -9,6 +9,7 @@
   btrfsMountOptions ? [
     "compress=zstd:3"
     "noatime"
+    "discard=async"
   ],
   allowDiscards ? true,
 }:
