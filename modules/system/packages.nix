@@ -22,11 +22,18 @@
     kubernetes-helm
     unzip
 
+    # Hardware tools
+    pciutils
+    libva-utils
+    vulkan-tools
+
     # KDE
     kdePackages.isoimagewriter
     kdePackages.partitionmanager
     vlc
     hardinfo2
+    nil
+    nixd
 
     # Development and CLI tools
     git
