@@ -37,6 +37,7 @@
     btrfs-progs
     compsize
     cryptsetup
+    sbctl
     tpm2-tools
 
     # YubiKey, FIDO2, and GPG/SSH-agent support

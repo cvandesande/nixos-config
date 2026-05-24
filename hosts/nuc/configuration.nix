@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 {
   imports = [
@@ -17,7 +17,7 @@
   boot = {
     loader = {
       systemd-boot = {
-        enable = true;
+        enable = lib.mkForce false;
         configurationLimit = 10;
         editor = false;
       };
@@ -25,7 +25,19 @@
       efi.canTouchEfiVariables = true;
     };
 
+    lanzaboote = {
+      enable = true;
+      pkiBundle = "/var/lib/sbctl";
+    };
+
     kernelPackages = pkgs.linuxPackages_latest;
+
+    # Work around this NUC firmware exposing the TPM2 CRB command buffer in a
+    # region Linux otherwise treats as busy:
+    # tpm_crb MSFT0101:00: error -EBUSY ... [mem 0xa2fff000-0xa2fff02f]
+    kernelParams = [
+      "memmap=0x1000%0xa2fff000+2"
+    ];
 
     initrd = {
       # Required for systemd-cryptenroll TPM2/FIDO2 LUKS unlock.
