@@ -19,7 +19,7 @@
   time.timeZone = "Europe/Dublin";
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_latest;
+    kernelPackages = pkgs.linuxPackages_xanmod_latest;
 
     # Work around this NUC firmware exposing the TPM2 CRB command buffer in a
     # region Linux otherwise treats as busy:
