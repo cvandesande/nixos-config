@@ -18,7 +18,7 @@
     loader = {
       systemd-boot = {
         enable = lib.mkForce false;
-        configurationLimit = 10;
+        configurationLimit = 2;
         editor = false;
       };
 
