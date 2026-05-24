@@ -6,7 +6,7 @@ The install uses:
 - LUKS full-disk encryption
 - Optional TPM2 and YubiKey FIDO2 LUKS unlock via `systemd-cryptenroll`
 - Btrfs subvolumes
-- systemd-boot
+- systemd-boot, with Lanzaboote/Secure Boot where enabled
 - KDE Plasma
 
 ## Host targets
@@ -17,14 +17,16 @@ The shared Disko layout lives in:
 modules/disko/luks-btrfs.nix
 ```
 Each host has a small `disk-config.nix` that supplies only its target disk.
+During install, set `HOST` to the target being installed. After booting the
+installed system, `HOST=$(hostname)` should match one of these flake outputs.
 
-Use the Framework Desktop target for the real install:
+Use the Framework Desktop target:
 
 ```bash
 .#liltig
 ```
 
-Use the NUC target for test installs:
+Use the NUC target:
 
 ```bash
 .#nuc
@@ -53,16 +55,21 @@ nix-shell -p git vim
 ## 2. Clone the config
 
 ```bash
-cd /tmp/nixos-config
+cd /tmp
 git clone https://github.com/cvandesande/nixos-config.git
+cd nixos-config
+
+# Pick the host being installed.
+HOST=liltig
 ```
 
 ## 3. Verify the target disk
 
-This config currently targets:
+Confirm the selected host and inspect its disk config before running Disko:
 
-```text
-/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232
+```bash
+echo "$HOST"
+cat "hosts/$HOST/disk-config.nix"
 ```
 
 ## 4. Partition, encrypt, format, and mount
@@ -70,7 +77,7 @@ This config currently targets:
 ```bash
 nix --experimental-features "nix-command flakes" run github:nix-community/disko -- \
   --mode disko \
-  --flake .#liltig
+  --flake ".#$HOST"
 ```
 
 After this, the new system should be mounted under `/mnt`.
@@ -90,20 +97,20 @@ filesystem entries:
 
 ```bash
 nixos-generate-config --no-filesystems --root /mnt
-cp hardware-configuration.nix hosts/liltig/hardware-configuration.nix
+cp hardware-configuration.nix "hosts/$HOST/hardware-configuration.nix"
 rm configuration.nix hardware-configuration.nix
 ```
 
 Inspect the generated host hardware config:
 
 ```bash
-cat hosts/liltig/hardware-configuration.nix
+cat "hosts/$HOST/hardware-configuration.nix"
 ```
 
 ## 7. Install NixOS
 
 ```bash
-nixos-install --flake .#liltig
+nixos-install --flake ".#$HOST"
 ```
 
 Set the normal user password before rebooting:
@@ -120,41 +127,101 @@ reboot
 
 ## 8. After first boot
 
-The installed config lives at:
-
-```text
-/etc/nixos
-```
-
-Commit the generated hardware configuration:
+For day-to-day work, manage this flake from the user's home directory. Copy the
+installed repo there after the first boot:
 
 ```bash
-cd /etc/nixos
+cp -a /etc/nixos ~/nixos-config
+sudo chown -R "$USER:$(id -gn)" ~/nixos-config
+cd ~/nixos-config
+```
+
+If `/etc/nixos` is missing or you prefer a fresh checkout, clone the repo
+instead:
+
+```bash
+git clone https://github.com/cvandesande/nixos-config.git ~/nixos-config
+cd ~/nixos-config
+```
+
+If a generated hardware configuration was created during install, commit it from
+the home-directory clone:
+
+```bash
 git status
-git add hosts/liltig/hardware-configuration.nix flake.lock
-git commit -m "Add liltig hardware configuration"
+HOST=$(hostname)
+git add "hosts/$HOST/hardware-configuration.nix" flake.lock
+git commit -m "Add $HOST hardware configuration"
 git push
 ```
 
-## 9. Enroll TPM2 and YubiKey unlock for LUKS
+## 9. Enable Secure Boot, then enroll TPM2 unlock
 
-The base install keeps the LUKS passphrase. Enroll hardware unlock methods only
-after the system boots successfully with the passphrase.
+The base install keeps the normal LUKS passphrase. Keep that passphrase even
+after TPM2 unlock works; it is the fallback when firmware, Secure Boot policy,
+or TPM state changes.
 
-This config already enables systemd stage 1 and the LUKS crypttab options for
-TPM2 and FIDO2:
+TPM2 enrollment uses PCR 7 in this config. PCR 7 measures Secure Boot policy, so
+enable and verify Secure Boot before enrolling the TPM2 LUKS token. If Secure
+Boot is enabled, disabled, reset, or re-keyed later, expect to re-enroll the
+TPM2 token using the passphrase.
 
-```nix
-boot.initrd.luks.devices.crypted.crypttabExtraOpts = [
-  "tpm2-device=auto"
-  "fido2-device=auto"
-];
+### Build the Secure Boot generation
+
+Set `HOST` to the flake host being configured:
+
+```bash
+cd ~/nixos-config
+HOST=$(hostname)
 ```
 
-> **Security note:** TPM2 auto-unlock is convenient, but by itself it mainly
-> protects against a stolen bare drive, not a stolen whole computer. Keep the
-> passphrase/recovery key, and prefer Secure Boot/measured boot before relying
-> on TPM2 as a strong physical-security boundary.
+The host config uses Lanzaboote and stores Secure Boot signing keys in
+`/var/lib/sbctl`. Create the keys before the first successful Lanzaboote switch:
+
+```bash
+nix build nixpkgs#sbctl
+sudo ./result/bin/sbctl create-keys
+rm result
+```
+
+Build and switch to the signed generation:
+
+```bash
+sudo nixos-rebuild switch --flake ".#$HOST"
+sudo sbctl verify
+```
+
+`sbctl verify` should show the bootloader and
+`/boot/EFI/Linux/nixos-generation-*.efi` files as signed. An unsigned
+`/boot/EFI/nixos/kernel-*.efi` file is not the boot path Lanzaboote uses.
+
+### Enroll Secure Boot keys in firmware
+
+Reboot into firmware setup with `F2`. Put Secure Boot into setup/custom mode if
+keys are not enrolled yet, then boot back into NixOS and run:
+
+```bash
+sudo sbctl enroll-keys --microsoft
+```
+
+Reboot again, enable Secure Boot in firmware if needed, and verify from NixOS:
+
+```bash
+sudo sbctl status
+bootctl status
+```
+
+Expected state:
+
+```text
+Setup Mode:  Disabled
+Secure Boot: Enabled
+```
+
+If Secure Boot is disabled but setup mode is also disabled, the keys are usually
+still enrolled; enable Secure Boot in firmware and verify again. Only re-run
+`sbctl enroll-keys --microsoft` if setup mode is enabled or the firmware keys
+were cleared.
 
 ### Find the LUKS partition
 
@@ -176,22 +243,29 @@ If that path does not exist, list the partition labels and pick the LUKS
 container partition, not `/dev/mapper/crypted`:
 
 ```bash
-ls -l /dev/disk/by-partlabel/
+lsblk -o NAME,TYPE,SIZE,FSTYPE,PARTLABEL,MOUNTPOINTS
 ```
 
-### Add a recovery key
-
-Store this offline. It remains usable anywhere a LUKS passphrase is accepted.
+For example, on the NUC test install the LUKS partition is usually:
 
 ```bash
-sudo systemd-cryptenroll --recovery-key "$LUKS"
+LUKS=/dev/sda2
 ```
 
-### Enroll TPM2
+### Verify TPM2
 
-PCR 7 binds the TPM enrollment to the Secure Boot policy state. If Secure Boot
-is later enabled/disabled or its keys change, expect to re-enroll the TPM slot
-using the passphrase or recovery key.
+The TPM must be visible and usable before LUKS enrollment:
+
+```bash
+ls -l /dev/tpm*
+sudo tpm2_getcap properties-fixed
+```
+
+Expect `/dev/tpmrm0` and successful `tpm2_getcap` output.
+
+### Enroll TPM2 unlock
+
+With Secure Boot enabled and verified, enroll TPM2 unlock bound to PCR 7:
 
 ```bash
 sudo systemd-cryptenroll \
@@ -200,7 +274,36 @@ sudo systemd-cryptenroll \
   "$LUKS"
 ```
 
-### Enroll a YubiKey as a FIDO2 unlock method
+Check that LUKS now has a `systemd-tpm2` token:
+
+```bash
+sudo cryptsetup luksDump "$LUKS" | less
+```
+
+The initrd must include the TPM2 crypttab option:
+
+```nix
+boot.initrd.luks.devices.crypted.crypttabExtraOpts = [
+  "tpm2-device=auto"
+  "fido2-device=auto"
+];
+```
+
+Rebuild and reboot:
+
+```bash
+sudo nixos-rebuild switch --flake ".#$HOST"
+sudo reboot
+```
+
+Normal boot should unlock through TPM2. If it falls back to the passphrase, boot
+with the passphrase and inspect:
+
+```bash
+sudo journalctl -b | grep -iE 'tpm|crypt|luks'
+```
+
+### Optional FIDO2 unlock
 
 Insert the YubiKey. Set a FIDO2 PIN if one is not already configured:
 
@@ -219,30 +322,8 @@ sudo systemd-cryptenroll \
   "$LUKS"
 ```
 
-Check the resulting LUKS slots/tokens:
-
-```bash
-sudo cryptsetup luksDump "$LUKS" | less
-```
-
-Rebuild so the booted generation definitely contains the current initrd
-settings:
-
-```bash
-cd /etc/nixos
-sudo nixos-rebuild switch --flake .#liltig
-```
-
-Reboot and verify:
-
-1. Normal boot should unlock through TPM2 if the PCR policy still matches.
-2. The original passphrase remains a fallback.
-3. To test the YubiKey path independently, temporarily remove
-   `"tpm2-device=auto"` from `crypttabExtraOpts`, rebuild, reboot with the
-   YubiKey inserted, then restore the TPM2 option.
-
-Do not remove the passphrase slot until both TPM2, YubiKey, and recovery-key
-unlock paths have been tested.
+Do not remove the passphrase slot until every intended unlock path has been
+tested.
 
 ## 10. YubiKey SSH agent
 
@@ -261,7 +342,8 @@ ssh-add -L
 For normal config changes on an already-installed system, use this flow:
 
 ```bash
-cd /etc/nixos
+cd ~/nixos-config
+HOST=$(hostname)
 ```
 
 Think: **check, build, test, switch**.
@@ -270,25 +352,25 @@ Think: **check, build, test, switch**.
 # 1. Check that every flake output evaluates.
 nix flake check --no-build
 
-# 2. Dry-run the NUC system build.
-nix build .#nixosConfigurations.nuc.config.system.build.toplevel --dry-run
+# 2. Dry-run the system build.
+nix build ".#nixosConfigurations.$HOST.config.system.build.toplevel" --dry-run
 
-# 3. Build the NUC generation, but do not activate it.
-nixos-rebuild build --flake .#nuc
+# 3. Build the generation, but do not activate it.
+nixos-rebuild build --flake ".#$HOST"
 
 # 4. Activate it temporarily until the next reboot.
-sudo nixos-rebuild test --flake .#nuc
+sudo nixos-rebuild test --flake ".#$HOST"
 
 # 5. Make it the active and default boot generation.
-sudo nixos-rebuild switch --flake .#nuc
+sudo nixos-rebuild switch --flake ".#$HOST"
 ```
 
 Most small edits use only:
 
 ```bash
 nix flake check --no-build
-nixos-rebuild build --flake .#nuc
-sudo nixos-rebuild switch --flake .#nuc
+nixos-rebuild build --flake ".#$HOST"
+sudo nixos-rebuild switch --flake ".#$HOST"
 ```
 
 Use `test` when changing services, hardware, boot, networking, or anything
@@ -307,7 +389,8 @@ Flakes update in two separate steps:
 Update all flake inputs:
 
 ```bash
-cd /etc/nixos
+cd ~/nixos-config
+HOST=$(hostname)
 nix flake update
 ```
 
@@ -315,9 +398,9 @@ Then rebuild with the normal flow:
 
 ```bash
 nix flake check --no-build
-nixos-rebuild build --flake .#nuc
-sudo nixos-rebuild test --flake .#nuc
-sudo nixos-rebuild switch --flake .#nuc
+nixos-rebuild build --flake ".#$HOST"
+sudo nixos-rebuild test --flake ".#$HOST"
+sudo nixos-rebuild switch --flake ".#$HOST"
 ```
 
 To update only `nixpkgs`:
@@ -341,4 +424,12 @@ Rollback if a switched generation is bad:
 
 ```bash
 sudo nixos-rebuild switch --rollback
+```
+
+Clean up old generations and unreachable store paths after the current system
+has been tested:
+
+```bash
+# Delete old system generations, then collect unreachable store paths as root.
+sudo nix-collect-garbage -d
 ```
