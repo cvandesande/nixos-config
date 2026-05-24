@@ -4,11 +4,13 @@
   imports = [
     ./hardware-configuration.nix
 
+    ../../modules/system/applications.nix
     ../../modules/system/boot.nix
+    ../../modules/system/hardware.nix
     ../../modules/system/nix-settings.nix
-    ../../modules/system/packages.nix
     ../../modules/system/services.nix
     ../../modules/system/users.nix
+    ../../modules/system/virtualisation.nix
   ];
 
   networking.hostName = "liltig";

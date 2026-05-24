@@ -9,8 +9,6 @@
 
   environment.systemPackages = with pkgs; [
     # Desktop applications
-    firefox
-    thunderbird
     onlyoffice-desktopeditors
     keepassxc
     nextcloud-client
@@ -27,9 +25,8 @@
     pciutils
     libva-utils
     vulkan-tools
-    virt-manager
 
-    # KDE
+    # KDE applications
     kdePackages.isoimagewriter
     kdePackages.partitionmanager
     vlc
@@ -38,11 +35,9 @@
     nixd
 
     # Development and CLI tools
-    git
     htop
     nodejs
     bubblewrap
-    vim
     curl
     zed-editor
     sops
@@ -57,10 +52,40 @@
     tpm2-tools
 
     # YubiKey, FIDO2, and GPG/SSH-agent support
-    gnupg
     libfido2
     pinentry-qt
     yubikey-manager
     yubikey-personalization
   ];
+
+  programs = {
+    firefox.enable = true;
+    git.enable = true;
+    thunderbird.enable = true;
+    vim.enable = true;
+    virt-manager.enable = true;
+
+    dconf.profiles.user.databases = [
+      {
+        locks = [
+          "/org/virt-manager/virt-manager/connections/autoconnect"
+          "/org/virt-manager/virt-manager/connections/uris"
+        ];
+        settings."org/virt-manager/virt-manager/connections" = {
+          autoconnect = [ "qemu:///system" ];
+          uris = [ "qemu:///system" ];
+        };
+      }
+    ];
+
+    # Use gpg-agent as the default SSH agent so SSH keys can live on a YubiKey.
+    # Hosts can override this when they need a different agent backend.
+    ssh.startAgent = lib.mkDefault false;
+
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = lib.mkDefault true;
+      pinentryPackage = pkgs.pinentry-qt;
+    };
+  };
 }

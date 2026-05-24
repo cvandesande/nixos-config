@@ -5,11 +5,13 @@
     ./hardware-configuration.nix
     ./hardware.nix
 
+    ../../modules/system/applications.nix
     ../../modules/system/boot.nix
+    ../../modules/system/hardware.nix
     ../../modules/system/nix-settings.nix
-    ../../modules/system/packages.nix
     ../../modules/system/services.nix
     ../../modules/system/users.nix
+    ../../modules/system/virtualisation.nix
   ];
 
   networking.hostName = "nuc";
@@ -25,6 +27,13 @@
     kernelParams = [
       "memmap=0x1000%0xa2fff000+2"
     ];
+  };
+
+  programs = {
+    # This NUC has only USB-A ports, so use OpenSSH's agent for KeePassXC
+    # instead of gpg-agent's YubiKey-oriented SSH support.
+    ssh.startAgent = true;
+    gnupg.agent.enableSSHSupport = false;
   };
 
   # Change this only after reading the NixOS release notes for the release
