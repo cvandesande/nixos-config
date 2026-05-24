@@ -1,6 +1,6 @@
 # NixOS installs
 
-The install uses:
+The workstation installs use:
 
 - Disko for declarative disk partitioning
 - LUKS full-disk encryption
@@ -9,16 +9,29 @@ The install uses:
 - systemd-boot, with Lanzaboote/Secure Boot where enabled
 - KDE Plasma
 
+The `nix-vm-*` targets are intentionally simpler: plain ext4, no LUKS, no Btrfs
+subvolumes/compression, and no graphical desktop.
+
 ## Host targets
 
-The shared Disko layout lives in:
+The shared Disko layouts live in:
 
 ```text
-modules/disko/luks-btrfs.nix
+modules/storage/luks-btrfs.nix
+modules/storage/ext4-simple.nix
 ```
 Each host has a small `disk-config.nix` that supplies only its target disk.
 During install, set `HOST` to the target being installed. After booting the
 installed system, `HOST=$(hostname)` should match one of these flake outputs.
+
+Host roles:
+
+| Host | Role | Storage | Desktop |
+| --- | --- | --- | --- |
+| `liltig` | Workstation/virtualisation host | LUKS + Btrfs + swap | KDE Plasma |
+| `nuc` | Workstation | LUKS + Btrfs + swap | KDE Plasma |
+| `nix-vm-x86_64` | Headless development VM | Plain ext4 | None |
+| `nix-vm-aarch64` | Headless development VM | Plain ext4 | None |
 
 Use the Framework Desktop target:
 
@@ -30,6 +43,18 @@ Use the NUC target:
 
 ```bash
 .#nuc
+```
+
+Use the development VM target for an x86_64 host:
+
+```bash
+.#nix-vm-x86_64
+```
+
+Use the development VM target for an ARM64 host:
+
+```bash
+.#nix-vm-aarch64
 ```
 
 ## 1. Boot the minimal NixOS ISO
@@ -72,7 +97,11 @@ echo "$HOST"
 cat "hosts/$HOST/disk-config.nix"
 ```
 
-## 4. Partition, encrypt, format, and mount
+## 4. Partition, format, and mount
+
+For `liltig` and `nuc`, this partitions the disk, creates LUKS, formats Btrfs,
+creates swap, and mounts the new system. For `nix-vm-*`, this creates only an EFI
+system partition and a plain ext4 root filesystem.
 
 ```bash
 nix --experimental-features "nix-command flakes" run github:nix-community/disko -- \
@@ -155,7 +184,10 @@ git commit -m "Add $HOST hardware configuration"
 git push
 ```
 
-## 9. Enable Secure Boot, then enroll TPM2 unlock
+## 9. Workstation only: enable Secure Boot, then enroll TPM2 unlock
+
+Skip this section for `nix-vm-*`; it does not use Lanzaboote, Secure Boot
+signing, LUKS, TPM2 unlock, or FIDO2 unlock.
 
 The base install keeps the normal LUKS passphrase. Keep that passphrase even
 after TPM2 unlock works; it is the fallback when firmware, Secure Boot policy,
@@ -325,7 +357,9 @@ sudo systemd-cryptenroll \
 Do not remove the passphrase slot until every intended unlock path has been
 tested.
 
-## 10. YubiKey SSH agent
+## 10. Workstation only: YubiKey SSH agent
+
+Skip this section for `nix-vm-*`.
 
 The system is configured to use `gpg-agent` as the SSH agent and includes the
 YubiKey/FIDO2 tools. After adding or importing an SSH-capable GPG key onto the

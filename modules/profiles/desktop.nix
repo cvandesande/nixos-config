@@ -2,6 +2,19 @@
 
 {
   services = {
+    displayManager = {
+      sddm = {
+        enable = true;
+        wayland.enable = true;
+      };
+
+      autoLogin = {
+        enable = false;
+        user = "cvandesande";
+      };
+    };
+    desktopManager.plasma6.enable = true;
+
     # YubiKey/FIDO2 support
     udev.packages = [
       pkgs.libfido2

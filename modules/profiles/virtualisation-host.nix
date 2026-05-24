@@ -1,6 +1,11 @@
 { pkgs, ... }:
 
 {
+  users.users.cvandesande.extraGroups = [
+    "docker"
+    "libvirtd"
+  ];
+
   virtualisation = {
     docker.enable = true;
 

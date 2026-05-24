@@ -1,28 +1,11 @@
-{ lib, ... }:
+{ ... }:
 
 {
-  # Networking
   networking.networkmanager.enable = true;
 
+  users.users.cvandesande.extraGroups = [ "networkmanager" ];
+
   services = {
-    # Remote access
-    openssh.enable = lib.mkDefault true;
-
-    # Desktop
-    displayManager = {
-      sddm = {
-        enable = true;
-        wayland.enable = true;
-      };
-
-      autoLogin = {
-        enable = false;
-        user = "cvandesande";
-      };
-    };
-    desktopManager.plasma6.enable = true;
-
-    # Storage maintenance
     fstrim.enable = true;
     btrfs.autoScrub = {
       enable = true;

@@ -15,30 +15,46 @@
     };
   };
 
-  outputs = { self, nixpkgs, disko, lanzaboote, ... }:
+  outputs =
+    {
+      nixpkgs,
+      disko,
+      lanzaboote,
+      ...
+    }:
     let
-      system = "x86_64-linux";
-    in {
-      nixosConfigurations = {
-        liltig = nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [
-            disko.nixosModules.disko
-            lanzaboote.nixosModules.lanzaboote
-            ./hosts/liltig/disk-config.nix
-            ./hosts/liltig/configuration.nix
-          ];
+      mkNixos = system: modules:
+        nixpkgs.lib.nixosSystem {
+          inherit system modules;
         };
 
-        nuc = nixpkgs.lib.nixosSystem {
-          inherit system;
-          modules = [
-            disko.nixosModules.disko
-            lanzaboote.nixosModules.lanzaboote
-            ./hosts/nuc/disk-config.nix
-            ./hosts/nuc/configuration.nix
-          ];
-        };
+      mkWorkstation = modules:
+        mkNixos "x86_64-linux" ([
+          disko.nixosModules.disko
+          lanzaboote.nixosModules.lanzaboote
+        ] ++ modules);
+
+      mkVm = system:
+        mkNixos system [
+          disko.nixosModules.disko
+          ./hosts/nix-vm/disk-config.nix
+          ./hosts/nix-vm/configuration.nix
+        ];
+    in
+    {
+      nixosConfigurations = {
+        liltig = mkWorkstation [
+          ./hosts/liltig/disk-config.nix
+          ./hosts/liltig/configuration.nix
+        ];
+
+        nuc = mkWorkstation [
+          ./hosts/nuc/disk-config.nix
+          ./hosts/nuc/configuration.nix
+        ];
+
+        nix-vm-x86_64 = mkVm "x86_64-linux";
+        nix-vm-aarch64 = mkVm "aarch64-linux";
       };
     };
 }

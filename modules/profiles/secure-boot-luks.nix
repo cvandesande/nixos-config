@@ -32,9 +32,7 @@
       ];
     };
 
-    plymouth = {
-      enable = true;
-    };
+    plymouth.enable = true;
 
     consoleLogLevel = 3;
     initrd.verbose = false;

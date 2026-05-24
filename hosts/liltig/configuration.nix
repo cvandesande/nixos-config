@@ -4,13 +4,14 @@
   imports = [
     ./hardware-configuration.nix
 
-    ../../modules/system/applications.nix
-    ../../modules/system/boot.nix
-    ../../modules/system/hardware.nix
-    ../../modules/system/nix-settings.nix
-    ../../modules/system/services.nix
-    ../../modules/system/users.nix
-    ../../modules/system/virtualisation.nix
+    ../../modules/base/nix-settings.nix
+    ../../modules/base/remote-access.nix
+    ../../modules/base/users.nix
+    ../../modules/profiles/applications.nix
+    ../../modules/profiles/desktop.nix
+    ../../modules/profiles/secure-boot-luks.nix
+    ../../modules/profiles/virtualisation-host.nix
+    ../../modules/profiles/workstation.nix
   ];
 
   networking.hostName = "liltig";
