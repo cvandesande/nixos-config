@@ -49,8 +49,19 @@
     ];
   };
 
-  # Containers
-  virtualisation.docker.enable = true;
+  # Virtualisation
+  virtualisation = {
+    docker.enable = true;
+    libvirtd = {
+      enable = true;
+      qemu = {
+        package = pkgs.qemu_kvm;
+        runAsRoot = true;
+        swtpm.enable = true;
+      };
+    };
+    spiceUSBRedirection.enable = true;
+  };
 
   # Hardware
   hardware = {
@@ -75,8 +86,20 @@
     };
   };
 
-  # Use gpg-agent as the SSH agent so SSH keys can live on a YubiKey.
   programs = {
+    dconf.profiles.user.databases = [
+      {
+        locks = [
+          "/org/virt-manager/virt-manager/connections/autoconnect"
+          "/org/virt-manager/virt-manager/connections/uris"
+        ];
+        settings."org/virt-manager/virt-manager/connections" = {
+          autoconnect = [ "qemu:///system" ];
+          uris = [ "qemu:///system" ];
+        };
+      }
+    ];
+    # Use gpg-agent as the SSH agent so SSH keys can live on a YubiKey.
     ssh.startAgent = false;
 
     gnupg.agent = {

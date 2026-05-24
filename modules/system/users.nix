@@ -3,6 +3,11 @@
 {
   users.users.cvandesande = {
     isNormalUser = true;
-    extraGroups = [ "docker" "wheel" "networkmanager" ];
+    extraGroups = [
+      "docker"
+      "wheel"
+      "networkmanager"
+      "libvirtd"
+    ];
   };
 }

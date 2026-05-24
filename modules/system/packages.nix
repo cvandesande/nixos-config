@@ -1,7 +1,8 @@
 { lib, pkgs, ... }:
 
 {
-  nixpkgs.config.allowUnfreePredicate = pkg:
+  nixpkgs.config.allowUnfreePredicate =
+    pkg:
     builtins.elem (lib.getName pkg) [
       "obsidian"
     ];
@@ -26,6 +27,7 @@
     pciutils
     libva-utils
     vulkan-tools
+    virt-manager
 
     # KDE
     kdePackages.isoimagewriter
