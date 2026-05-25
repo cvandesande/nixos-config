@@ -4,12 +4,14 @@
   nixpkgs.config.allowUnfreePredicate =
     pkg:
     builtins.elem (lib.getName pkg) [
+      "discord"
       "obsidian"
       "stremio-linux-shell"
     ];
 
   environment.systemPackages = with pkgs; [
     # Desktop applications
+    discord
     epsonscan2
     fastfetch
     gajim
@@ -17,6 +19,7 @@
     nextcloud-client
     obsidian
     onlyoffice-desktopeditors
+    signal-desktop
     stremio-linux-shell
     unzip
 
@@ -37,6 +40,7 @@
     htop
     nodejs
     bubblewrap
+    cosign
     curl
     zed-editor
     sops
@@ -44,6 +48,7 @@
     ripgrep
     talosctl
     kubectl
+    kubectl-cnpg
     kubernetes-helm
 
     # Filesystem, encryption, and install support

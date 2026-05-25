@@ -2,6 +2,8 @@
 
 {
   services = {
+    fwupd.enable = true;
+
     displayManager = {
       sddm = {
         enable = true;

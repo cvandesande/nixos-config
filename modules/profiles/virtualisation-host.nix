@@ -7,7 +7,10 @@
   ];
 
   virtualisation = {
-    docker.enable = true;
+    docker = {
+      enable = true;
+      storageDriver = "btrfs";
+    };
 
     libvirtd = {
       enable = true;
