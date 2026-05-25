@@ -5,6 +5,10 @@
     "i915"
   ];
 
+  boot.kernelModules = [
+    "nct6775"
+  ];
+
   hardware.graphics = {
     extraPackages = with pkgs; [
       intel-vaapi-driver
@@ -15,4 +19,6 @@
   environment.sessionVariables = {
     LIBVA_DRIVER_NAME = "i965";
   };
+
+  services.thermald.enable = true;
 }

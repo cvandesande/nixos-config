@@ -26,6 +26,7 @@
     # region Linux otherwise treats as busy:
     # tpm_crb MSFT0101:00: error -EBUSY ... [mem 0xa2fff000-0xa2fff02f]
     kernelParams = [
+      "acpi_enforce_resources=lax"
       "memmap=0x1000%0xa2fff000+2"
     ];
   };
