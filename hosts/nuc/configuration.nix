@@ -4,6 +4,7 @@
   imports = [
     ./hardware-configuration.nix
     ./hardware.nix
+    ./encrypted-swap-udev-settle.nix
 
     ../../modules/base/nix-settings.nix
     ../../modules/base/remote-access.nix
@@ -21,6 +22,9 @@
 
   boot = {
     kernelPackages = pkgs.linuxPackages_xanmod_latest;
+
+    # Removes error from unused hardware on NUC
+    blacklistedKernelModules = [ "spi_nor" ];
 
     # Work around this NUC firmware exposing the TPM2 CRB command buffer in a
     # region Linux otherwise treats as busy:
