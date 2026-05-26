@@ -437,6 +437,19 @@ sudo nixos-rebuild test --flake ".#$HOST"
 sudo nixos-rebuild switch --flake ".#$HOST"
 ```
 
+After switching, audit what changed:
+
+```bash
+# Compare the system booted at startup with the currently active generation.
+nix store diff-closures /run/booted-system /run/current-system
+
+# Compare adjacent system profile generations.
+sudo nix profile diff-closures --profile /nix/var/nix/profiles/system
+
+# Show which modules contributed to environment.systemPackages.
+nix eval --json ".#nixosConfigurations.$HOST.options.environment.systemPackages.definitionsWithLocations"
+```
+
 To update only `nixpkgs`:
 
 ```bash

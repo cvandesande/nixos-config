@@ -2,7 +2,7 @@
   description = "NixOS configurations";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
 
     disko = {
       url = "github:nix-community/disko";
@@ -23,18 +23,24 @@
       ...
     }:
     let
-      mkNixos = system: modules:
+      mkNixos =
+        system: modules:
         nixpkgs.lib.nixosSystem {
           inherit system modules;
         };
 
-      mkWorkstation = modules:
-        mkNixos "x86_64-linux" ([
-          disko.nixosModules.disko
-          lanzaboote.nixosModules.lanzaboote
-        ] ++ modules);
+      mkWorkstation =
+        modules:
+        mkNixos "x86_64-linux" (
+          [
+            disko.nixosModules.disko
+            lanzaboote.nixosModules.lanzaboote
+          ]
+          ++ modules
+        );
 
-      mkVm = system:
+      mkVm =
+        system:
         mkNixos system [
           disko.nixosModules.disko
           ./hosts/nix-vm/disk-config.nix
