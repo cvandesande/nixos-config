@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     disko = {
       url = "github:nix-community/disko";
@@ -16,6 +17,7 @@
   };
 
   outputs =
+    inputs@
     {
       nixpkgs,
       disko,
@@ -27,6 +29,9 @@
         system: modules:
         nixpkgs.lib.nixosSystem {
           inherit system modules;
+          specialArgs = {
+            inherit inputs;
+          };
         };
 
       mkWorkstation =

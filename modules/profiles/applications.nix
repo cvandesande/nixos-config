@@ -1,26 +1,41 @@
-{ lib, pkgs, ... }:
+{
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 
+let
+  unstable = import inputs.nixpkgs-unstable {
+    inherit (pkgs.stdenv.hostPlatform) system;
+    config.allowUnfreePredicate =
+      pkg:
+      builtins.elem (lib.getName pkg) [
+      "discord"
+      "obsidian"
+      "stremio-linux-shell"
+      "zoom"
+      ];
+  };
+in
 {
   nixpkgs.config.allowUnfreePredicate =
     pkg:
     builtins.elem (lib.getName pkg) [
-      "discord"
-      "obsidian"
-      "stremio-linux-shell"
     ];
 
   environment.systemPackages = with pkgs; [
     # Desktop applications
-    discord
+    unstable.discord
     epsonscan2
     fastfetch
     gajim
-    keepassxc
-    nextcloud-client
-    obsidian
+    unstable.keepassxc
+    unstable.nextcloud-client
+    unstable.obsidian
     onlyoffice-desktopeditors
     signal-desktop
-    stremio-linux-shell
+    unstable.stremio-linux-shell
     unzip
 
     # Hardware tools
@@ -42,14 +57,14 @@
     bubblewrap
     cosign
     curl
-    zed-editor
-    sops
-    gh
+    unstable.zed-editor
+    unstable.sops
+    unstable.gh
     ripgrep
-    talosctl
-    kubectl
-    kubectl-cnpg
-    kubernetes-helm
+    unstable.talosctl
+    unstable.kubectl
+    unstable.kubectl-cnpg
+    unstable.kubernetes-helm
 
     # Filesystem, encryption, and install support
     btrfs-progs
@@ -66,11 +81,20 @@
   ];
 
   programs = {
-    firefox.enable = true;
+    firefox = {
+      enable = true;
+      preferences = {
+        "widget.use-xdg-desktop-portal.file-picker" = 1;
+      };
+    };
     git.enable = true;
     thunderbird.enable = true;
     vim.enable = true;
     virt-manager.enable = true;
+    zoom-us = {
+      enable = true;
+      package = unstable.zoom-us;
+    };
 
     dconf.profiles.user.databases = [
       {
