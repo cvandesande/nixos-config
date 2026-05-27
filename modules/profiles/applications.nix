@@ -11,18 +11,15 @@ let
     config.allowUnfreePredicate =
       pkg:
       builtins.elem (lib.getName pkg) [
-      "discord"
-      "obsidian"
-      "stremio-linux-shell"
-      "zoom"
+        "discord"
+        "obsidian"
+        "stremio-linux-shell"
+        "zoom"
       ];
   };
 in
 {
-  nixpkgs.config.allowUnfreePredicate =
-    pkg:
-    builtins.elem (lib.getName pkg) [
-    ];
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ ];
 
   environment.systemPackages = with pkgs; [
     # Desktop applications
@@ -43,7 +40,8 @@ in
     pciutils
     vulkan-tools
 
-    # KDE applications
+    # KDE specific
+    papirus-icon-theme
     kdePackages.isoimagewriter
     kdePackages.partitionmanager
     hardinfo2

@@ -1,6 +1,11 @@
 { pkgs, ... }:
 
 {
+  environment.etc."xdg/kdeglobals".text = ''
+    [Icons]
+    Theme=Papirus-Dark
+  '';
+
   services = {
     fwupd.enable = true;
 
