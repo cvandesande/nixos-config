@@ -45,8 +45,6 @@ in
     kdePackages.isoimagewriter
     kdePackages.partitionmanager
     hardinfo2
-    nil
-    nixd
     vlc
 
     # Development and CLI tools
@@ -54,7 +52,13 @@ in
     nodejs
     bubblewrap
     cosign
+    file
+    yq
+    jq
     curl
+    nil
+    nixd
+    nix-index
     unstable.zed-editor
     unstable.sops
     unstable.gh
@@ -81,6 +85,7 @@ in
   programs = {
     firefox = {
       enable = true;
+      package = unstable.firefox;
       preferences = {
         "widget.use-xdg-desktop-portal.file-picker" = 1;
       };
