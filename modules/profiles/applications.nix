@@ -49,7 +49,7 @@ in
 
     # Development and CLI tools
     htop
-    nodejs
+    unstable.nodejs
     bubblewrap
     cosign
     file

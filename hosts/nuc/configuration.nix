@@ -1,5 +1,10 @@
-{ pkgs, ... }:
+{ inputs, pkgs, ... }:
 
+let
+  unstable = import inputs.nixpkgs-unstable {
+    inherit (pkgs.stdenv.hostPlatform) system;
+  };
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -21,7 +26,7 @@
   time.timeZone = "Europe/Dublin";
 
   boot = {
-    kernelPackages = pkgs.linuxPackages_xanmod_latest;
+    kernelPackages = unstable.linuxPackages_xanmod_latest;
 
     # Removes error from unused hardware on NUC
     blacklistedKernelModules = [ "spi_nor" ];
