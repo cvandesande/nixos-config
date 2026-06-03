@@ -1,5 +1,22 @@
 { pkgs, ... }:
 
+let
+  notifyRebootRequired = pkgs.writeShellScript "notify-reboot-required" ''
+    set -eu
+
+    if [ "$(readlink /run/booted-system)" = "$(readlink /run/current-system)" ]; then
+      exit 0
+    fi
+
+    ${pkgs.libnotify}/bin/notify-send \
+      --app-name "NixOS updates" \
+      --icon system-software-update \
+      --urgency normal \
+      "Restart required" \
+      "NixOS updates were installed, but a reboot is needed to finish applying them."
+  '';
+in
+
 {
   environment.etc."xdg/kdeglobals".text = ''
     [Icons]
@@ -48,6 +65,26 @@
     sane = {
       enable = true;
       extraBackends = [ pkgs.epsonscan2 ];
+    };
+  };
+
+  systemd.user = {
+    services.notify-reboot-required = {
+      description = "Notify when the active NixOS generation needs a reboot";
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = notifyRebootRequired;
+      };
+    };
+
+    timers.notify-reboot-required = {
+      description = "Check whether the active NixOS generation needs a reboot";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "5min";
+        OnUnitActiveSec = "6h";
+        Persistent = true;
+      };
     };
   };
 }
