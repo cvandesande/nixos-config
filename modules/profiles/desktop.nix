@@ -8,12 +8,14 @@ let
       exit 0
     fi
 
-    ${pkgs.libnotify}/bin/notify-send \
+    if ! ${pkgs.libnotify}/bin/notify-send \
       --app-name "NixOS updates" \
       --icon system-software-update \
       --urgency normal \
       "Restart required" \
-      "NixOS updates were installed, but a reboot is needed to finish applying them."
+      "NixOS updates were installed, but a reboot is needed to finish applying them."; then
+      echo "Restart required: NixOS updates were installed, but notify-send could not reach the desktop session."
+    fi
   '';
 in
 

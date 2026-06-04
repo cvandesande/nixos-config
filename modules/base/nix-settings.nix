@@ -14,7 +14,7 @@
     "nuc"
   ]) {
     enable = true;
-    flake = "/home/cvandesande/nixos-config#${config.networking.hostName}";
+    flake = "path:/home/cvandesande/nixos-config#${config.networking.hostName}";
     flags = [
       "--update-input"
       "nixpkgs"
