@@ -17,6 +17,24 @@ let
         "zoom"
       ];
   };
+
+  ha-mcp = pkgs.writeShellApplication {
+    name = "ha-mcp";
+    runtimeInputs = [
+      pkgs.python313
+      pkgs.uv
+    ];
+    text = ''
+      if [[ -f /var/lib/ha-mcp/env ]]; then
+        set -a
+        # shellcheck disable=SC1091
+        source /var/lib/ha-mcp/env
+        set +a
+      fi
+
+      exec uvx --python ${pkgs.python313}/bin/python3.13 ha-mcp@latest "$@"
+    '';
+  };
 in
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ ];
@@ -59,6 +77,7 @@ in
     nil
     nixd
     nix-index
+    python313
     unstable.zed-editor
     unstable.sops
     unstable.gh
@@ -67,6 +86,8 @@ in
     unstable.kubectl
     unstable.kubectl-cnpg
     unstable.kubernetes-helm
+    uv
+    ha-mcp
 
     # Filesystem, encryption, and install support
     btrfs-progs
@@ -80,6 +101,10 @@ in
     pinentry-qt
     yubikey-manager
     yubikey-personalization
+  ];
+
+  systemd.tmpfiles.rules = [
+    "d /var/lib/ha-mcp 0700 root root -"
   ];
 
   programs = {

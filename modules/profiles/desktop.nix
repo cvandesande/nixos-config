@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 
 let
   notifyRebootRequired = pkgs.writeShellScript "notify-reboot-required" ''
@@ -47,6 +47,8 @@ in
       pkgs.yubikey-personalization
     ];
   };
+
+  systemd.services.fwupd-refresh.serviceConfig.User = lib.mkForce "root";
 
   hardware = {
     bluetooth = {
