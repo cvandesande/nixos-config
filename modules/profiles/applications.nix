@@ -74,10 +74,20 @@ in
     yq
     jq
     curl
+    fd
+    bat
+    delta
+    tree
     nil
     nixd
     nix-index
-    python313
+    nixfmt
+    statix
+    deadnix
+    shellcheck
+    shfmt
+    dnsutils
+    socat
     unstable.zed-editor
     unstable.sops
     unstable.gh
@@ -88,6 +98,11 @@ in
     unstable.kubernetes-helm
     uv
     ha-mcp
+
+    # Python and packages
+    (python313.withPackages (ps: with ps; [
+      pyyaml
+    ]))
 
     # Filesystem, encryption, and install support
     btrfs-progs
