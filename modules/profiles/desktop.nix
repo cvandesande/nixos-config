@@ -4,17 +4,86 @@ let
   notifyRebootRequired = pkgs.writeShellScript "notify-reboot-required" ''
     set -eu
 
-    if [ "$(readlink /run/booted-system)" = "$(readlink /run/current-system)" ]; then
+    booted_system="$(readlink /run/booted-system)"
+    current_system="$(readlink /run/current-system)"
+    reboot_required=0
+
+    if [ "$booted_system" != "$current_system" ]; then
+      reboot_required=1
+    fi
+
+    state_dir="''${XDG_STATE_HOME:-$HOME/.local/state}/nixos-updates"
+    diff_file="$state_dir/latest.diff"
+    last_notified_file="$state_dir/last-notified-system"
+    ${pkgs.coreutils}/bin/mkdir -p "$state_dir"
+
+    last_notified=""
+    if [ -f "$last_notified_file" ]; then
+      last_notified="$(${pkgs.coreutils}/bin/cat "$last_notified_file")"
+    fi
+
+    if [ "$last_notified" = "$current_system" ]; then
       exit 0
+    fi
+
+    diff_base="$booted_system"
+    if [ -n "$last_notified" ] && [ -e "$last_notified" ]; then
+      diff_base="$last_notified"
+    fi
+
+    if diff="$(${pkgs.nix}/bin/nix store diff-closures "$diff_base" "$current_system" 2>&1)"; then
+      :
+    else
+      diff="Could not calculate NixOS update diff:
+$diff"
+    fi
+
+    ${pkgs.coreutils}/bin/printf '%s\n' "$diff" > "$diff_file"
+
+    total_lines="$(${pkgs.coreutils}/bin/printf '%s\n' "$diff" | ${pkgs.gnugrep}/bin/grep -c . || true)"
+    change_count="$total_lines"
+    max_lines=18
+    if [ -n "$diff" ]; then
+      summary="$(${pkgs.coreutils}/bin/printf '%s\n' "$diff" | ${pkgs.coreutils}/bin/head -n "$max_lines")"
+    else
+      summary="No package-level closure changes detected."
+    fi
+
+    if [ "$total_lines" -gt "$max_lines" ]; then
+      remaining_lines=$((total_lines - max_lines))
+      summary="$summary
+... $remaining_lines more lines in $diff_file"
+    fi
+
+    title="NixOS updates installed"
+    if [ "$change_count" -gt 0 ]; then
+      title="NixOS updates installed ($change_count package changes)"
+    fi
+
+    reboot_message=""
+    if [ "$reboot_required" -eq 1 ]; then
+      reboot_message="A reboot is recommended because the booted system differs from the active system.
+
+"
     fi
 
     if ! ${pkgs.libnotify}/bin/notify-send \
       --app-name "NixOS updates" \
       --icon system-software-update \
       --urgency normal \
-      "Restart required" \
-      "NixOS updates were installed, but a reboot is needed to finish applying them."; then
-      echo "Restart required: NixOS updates were installed, but notify-send could not reach the desktop session."
+      "$title" \
+      "NixOS updates were installed.
+
+$reboot_message\
+$summary"; then
+      echo "NixOS updates were installed, but notify-send could not reach the desktop session."
+      if [ "$reboot_required" -eq 1 ]; then
+        echo "A reboot is recommended because the booted system differs from the active system."
+      fi
+      echo "Package changes:"
+      ${pkgs.coreutils}/bin/printf '%s\n' "$diff"
+    else
+      ${pkgs.coreutils}/bin/printf '%s\n' "$current_system" > "$last_notified_file"
     fi
   '';
 in
@@ -74,11 +143,17 @@ in
 
   systemd.user = {
     services.notify-reboot-required = {
-      description = "Notify when the active NixOS generation needs a reboot";
+      description = "Notify when NixOS updates are installed";
       serviceConfig = {
         Type = "oneshot";
         ExecStart = notifyRebootRequired;
       };
+    };
+
+    paths.notify-reboot-required = {
+      description = "Watch for active NixOS generation changes";
+      wantedBy = [ "default.target" ];
+      pathConfig.PathChanged = "/run/current-system";
     };
 
     timers.notify-reboot-required = {
