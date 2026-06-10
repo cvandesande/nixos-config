@@ -9,6 +9,7 @@
     ../../modules/base/users.nix
     ../../modules/profiles/applications.nix
     ../../modules/profiles/desktop.nix
+    ../../modules/profiles/dev-toolchain.nix
     ../../modules/profiles/secure-boot-luks.nix
     ../../modules/profiles/virtualisation-host.nix
     ../../modules/profiles/workstation.nix

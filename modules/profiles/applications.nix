@@ -74,9 +74,6 @@ in
     yq
     jq
     curl
-    fd
-    bat
-    delta
     tree
     nil
     nixd
@@ -84,19 +81,15 @@ in
     nixfmt
     statix
     deadnix
-    shellcheck
-    shfmt
     dnsutils
     socat
     unstable.zed-editor
     unstable.sops
     unstable.gh
-    ripgrep
     unstable.talosctl
     unstable.kubectl
     unstable.kubectl-cnpg
     unstable.kubernetes-helm
-    uv
     ha-mcp
 
     # Python and packages
@@ -137,6 +130,15 @@ in
     zoom-us = {
       enable = true;
       package = unstable.zoom-us;
+    };
+
+    # Zed downloads language servers such as rust-analyzer as generic Linux
+    # binaries, which expect the standard dynamic loader path to exist.
+    nix-ld = {
+      enable = true;
+      libraries = with pkgs; [
+        stdenv.cc.cc
+      ];
     };
 
     dconf.profiles.user.databases = [

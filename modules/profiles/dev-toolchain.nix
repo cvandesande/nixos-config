@@ -11,11 +11,17 @@
     ripgrep
     vim
     wget
+    shfmt
+    shellcheck
+    delta
+    bat
+    fd
 
     # Rust
     cargo
     clippy
     rustc
+    rustPlatform.rustLibSrc
     rustfmt
 
     # Python
@@ -45,4 +51,6 @@
     git.enable = true;
     vim.enable = true;
   };
+
+  environment.sessionVariables.RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
 }
