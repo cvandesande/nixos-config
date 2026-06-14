@@ -33,11 +33,10 @@
           };
         };
 
-      commonModules = [
+      baseModules = [
         ./modules/base/nix-settings.nix
         ./modules/base/remote-access.nix
         ./modules/base/users.nix
-        ./modules/profiles/dev-toolchain.nix
         ./modules/profiles/unstable-kernel.nix
         ./modules/storage/zfs.nix
         {
@@ -46,9 +45,16 @@
         }
       ];
 
-      workstationModules = [
+      devModules = [
+        ./modules/profiles/dev-toolchain.nix
+      ];
+
+      desktopModules = [
         ./modules/profiles/applications.nix
         ./modules/profiles/desktop.nix
+      ];
+
+      workstationModules = [
         ./modules/profiles/secure-boot-luks.nix
         ./modules/profiles/virtualisation-host.nix
         ./modules/profiles/workstation.nix
@@ -66,7 +72,9 @@
             disko.nixosModules.disko
             lanzaboote.nixosModules.lanzaboote
           ]
-          ++ commonModules
+          ++ baseModules
+          ++ devModules
+          ++ desktopModules
           ++ workstationModules
           ++ modules
         );
@@ -74,7 +82,11 @@
       mkVm =
         system:
         mkNixos system (
-          [ disko.nixosModules.disko ] ++ commonModules ++ vmModules ++ [ ./hosts/nix-vm/configuration.nix ]
+          [ disko.nixosModules.disko ]
+          ++ baseModules
+          ++ devModules
+          ++ vmModules
+          ++ [ ./hosts/nix-vm/configuration.nix ]
         );
     in
     {
