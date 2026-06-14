@@ -1,37 +1,24 @@
 {
-  inputs,
   lib,
   pkgs,
+  pkgsUnstable,
   ...
 }:
 
-let
-  unstable = import inputs.nixpkgs-unstable {
-    inherit (pkgs.stdenv.hostPlatform) system;
-    config.allowUnfreePredicate =
-      pkg:
-      builtins.elem (lib.getName pkg) [
-        "discord"
-        "obsidian"
-        "stremio-linux-shell"
-        "zoom"
-      ];
-  };
-in
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ ];
 
   environment.systemPackages = with pkgs; [
     # Desktop applications
-    unstable.discord
+    pkgsUnstable.discord
     epsonscan2
     gajim
-    unstable.keepassxc
-    unstable.nextcloud-client
-    unstable.obsidian
+    pkgsUnstable.keepassxc
+    pkgsUnstable.nextcloud-client
+    pkgsUnstable.obsidian
     onlyoffice-desktopeditors
     signal-desktop
-    unstable.stremio-linux-shell
+    pkgsUnstable.stremio-linux-shell
 
     # Hardware tools
     libva-utils
@@ -62,7 +49,7 @@ in
   programs = {
     firefox = {
       enable = true;
-      package = unstable.firefox;
+      package = pkgsUnstable.firefox;
       preferences = {
         "widget.use-xdg-desktop-portal.file-picker" = 1;
       };
@@ -71,7 +58,7 @@ in
     virt-manager.enable = true;
     zoom-us = {
       enable = true;
-      package = unstable.zoom-us;
+      package = pkgsUnstable.zoom-us;
     };
 
     # Zed downloads language servers such as rust-analyzer as generic Linux

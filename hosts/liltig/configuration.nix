@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgsUnstable, ... }:
 
 {
   imports = [
@@ -10,4 +10,8 @@
 
   networking.hostName = "liltig";
   networking.hostId = "534d981c";
+
+  time.timeZone = "Europe/Dublin";
+
+  boot.kernelPackages = pkgsUnstable.linuxPackages_xanmod_latest;
 }

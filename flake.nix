@@ -30,6 +30,17 @@
           inherit system modules;
           specialArgs = {
             inherit inputs;
+            pkgsUnstable = import inputs.nixpkgs-unstable {
+              inherit system;
+              config.allowUnfreePredicate =
+                pkg:
+                builtins.elem (nixpkgs.lib.getName pkg) [
+                  "discord"
+                  "obsidian"
+                  "stremio-linux-shell"
+                  "zoom"
+                ];
+            };
           };
         };
 
@@ -37,12 +48,6 @@
         ./modules/base/nix-settings.nix
         ./modules/base/remote-access.nix
         ./modules/base/users.nix
-        ./modules/profiles/unstable-kernel.nix
-        ./modules/storage/zfs.nix
-        {
-          time.timeZone = "Europe/Dublin";
-          system.stateVersion = "25.11";
-        }
       ];
 
       devModules = [
@@ -58,11 +63,6 @@
         ./modules/profiles/secure-boot-luks.nix
         ./modules/profiles/virtualisation-host.nix
         ./modules/profiles/workstation.nix
-      ];
-
-      vmModules = [
-        ./modules/profiles/headless.nix
-        ./modules/profiles/vm-boot.nix
       ];
 
       mkWorkstation =
@@ -82,11 +82,7 @@
       mkVm =
         system:
         mkNixos system (
-          [ disko.nixosModules.disko ]
-          ++ baseModules
-          ++ devModules
-          ++ vmModules
-          ++ [ ./hosts/nix-vm/configuration.nix ]
+          [ disko.nixosModules.disko ] ++ baseModules ++ devModules ++ [ ./hosts/nix-vm/configuration.nix ]
         );
     in
     {

@@ -1,10 +1,6 @@
-{ inputs, pkgs, ... }:
+{ pkgs, pkgsUnstable, ... }:
 
 let
-  unstable = import inputs.nixpkgs-unstable {
-    inherit (pkgs.stdenv.hostPlatform) system;
-  };
-
   ha-mcp = pkgs.writeShellApplication {
     name = "ha-mcp";
     runtimeInputs = [
@@ -25,51 +21,61 @@ let
 in
 {
   environment.systemPackages = with pkgs; [
-    # Development and CLI tools
-    htop
-    unstable.nodejs
+    # Unstable infrastructure tools
+    pkgsUnstable.gh
+    pkgsUnstable.kubectl
+    pkgsUnstable.kubectl-cnpg
+    pkgsUnstable.kubernetes-helm
+    pkgsUnstable.sops
+    pkgsUnstable.talosctl
+
+    # Unstable runtimes and editors
+    pkgsUnstable.nodejs
+    pkgsUnstable.zed-editor
+
+    # C/C++
+    clang
+    cmake
+    gdb
+    gnumake
+    pkg-config
+
+    # CLI utilities
+    bat
     bubblewrap
     cosign
-    fastfetch
-    file
-    yq
-    jq
     curl
+    delta
+    dnsutils
+    fastfetch
+    fd
+    file
+    htop
+    jq
+    ripgrep
+    shellcheck
+    shfmt
+    socat
     tree
+    unzip
+    wget
+    yq
+
+    # Go
+    delve
+    go
+    gopls
+
+    # Local tools
+    ha-mcp
+
+    # Nix tools
+    deadnix
     nil
-    nixd
     nix-index
+    nixd
     nixfmt
     statix
-    deadnix
-    dnsutils
-    socat
-    unstable.zed-editor
-    unstable.sops
-    unstable.gh
-    unstable.talosctl
-    unstable.kubectl
-    unstable.kubectl-cnpg
-    unstable.kubernetes-helm
-    ha-mcp
-    unzip
-    direnv
-    git
-    ripgrep
-    vim
-    wget
-    shfmt
-    shellcheck
-    delta
-    bat
-    fd
-
-    # Rust
-    cargo
-    clippy
-    rustc
-    rustPlatform.rustLibSrc
-    rustfmt
 
     # Python
     basedpyright
@@ -81,17 +87,12 @@ in
     ruff
     uv
 
-    # C/C++
-    clang
-    cmake
-    gdb
-    gnumake
-    pkg-config
-
-    # Go
-    delve
-    go
-    gopls
+    # Rust
+    cargo
+    clippy
+    rustPlatform.rustLibSrc
+    rustc
+    rustfmt
   ];
 
   systemd.tmpfiles.rules = [
