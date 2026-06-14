@@ -2,24 +2,12 @@
 
 {
   imports = [
-    ./hardware-configuration.nix
-
-    ../../modules/base/nix-settings.nix
-    ../../modules/base/remote-access.nix
-    ../../modules/base/users.nix
-    ../../modules/profiles/applications.nix
-    ../../modules/profiles/desktop.nix
-    ../../modules/profiles/dev-toolchain.nix
-    ../../modules/profiles/secure-boot-luks.nix
-    ../../modules/profiles/virtualisation-host.nix
-    ../../modules/profiles/workstation.nix
+    (import ../../modules/storage/luks-btrfs.nix {
+      device = "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232";
+      swapSize = "128G";
+    })
   ];
 
   networking.hostName = "liltig";
-
-  time.timeZone = "Europe/Dublin";
-
-  # Change this only after reading the NixOS release notes for the release
-  # used when the machine was first installed.
-  system.stateVersion = "25.11";
+  networking.hostId = "534d981c";
 }

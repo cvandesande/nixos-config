@@ -94,6 +94,11 @@ in
     Theme=Papirus-Dark
   '';
 
+  environment.etc."sddm/kcminputrc".text = ''
+    [Keyboard]
+    NumLock=0
+  '';
+
   services = {
     fwupd.enable = true;
 
@@ -101,6 +106,7 @@ in
       sddm = {
         enable = true;
         wayland.enable = true;
+        settings.General.Numlock = "on";
       };
 
       autoLogin = {
@@ -116,6 +122,11 @@ in
       pkgs.yubikey-personalization
     ];
   };
+
+  systemd.tmpfiles.rules = [
+    "d /var/lib/sddm/.config 0755 sddm sddm -"
+    "C+ /var/lib/sddm/.config/kcminputrc 0644 sddm sddm - /etc/sddm/kcminputrc"
+  ];
 
   systemd.services.fwupd-refresh.serviceConfig.User = lib.mkForce "root";
 
@@ -166,4 +177,8 @@ in
       };
     };
   };
+
+  system.userActivationScripts.notify-reboot-required = ''
+    ${pkgs.systemd}/bin/systemctl --user start notify-reboot-required.service || true
+  '';
 }

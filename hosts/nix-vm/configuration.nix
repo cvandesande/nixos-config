@@ -1,20 +1,22 @@
-{ ... }:
+{ modulesPath, ... }:
 
 {
   imports = [
-    ./hardware-configuration.nix
-
-    ../../modules/base/nix-settings.nix
-    ../../modules/base/remote-access.nix
-    ../../modules/base/users.nix
-    ../../modules/profiles/dev-toolchain.nix
-    ../../modules/profiles/headless.nix
-    ../../modules/profiles/vm-boot.nix
+    (modulesPath + "/profiles/qemu-guest.nix")
+    (import ../../modules/storage/ext4-simple.nix {
+      device = "/dev/vda";
+    })
   ];
 
   networking.hostName = "nix-vm";
+  networking.hostId = "c6d8f31a";
 
-  time.timeZone = "Europe/Dublin";
-
-  system.stateVersion = "25.11";
+  boot = {
+    initrd = {
+      availableKernelModules = [ "virtio_pci" ];
+      kernelModules = [ ];
+    };
+    kernelModules = [ ];
+    extraModulePackages = [ ];
+  };
 }

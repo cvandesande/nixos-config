@@ -1,6 +1,8 @@
 { ... }:
 
 {
+  hardware.enableRedistributableFirmware = true;
+
   networking.networkmanager.enable = true;
 
   users.users.cvandesande.extraGroups = [ "networkmanager" ];

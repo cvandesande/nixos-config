@@ -17,24 +17,6 @@ let
         "zoom"
       ];
   };
-
-  ha-mcp = pkgs.writeShellApplication {
-    name = "ha-mcp";
-    runtimeInputs = [
-      pkgs.python313
-      pkgs.uv
-    ];
-    text = ''
-      if [[ -f /var/lib/ha-mcp/env ]]; then
-        set -a
-        # shellcheck disable=SC1091
-        source /var/lib/ha-mcp/env
-        set +a
-      fi
-
-      exec uvx --python ${pkgs.python313}/bin/python3.13 ha-mcp@latest "$@"
-    '';
-  };
 in
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ ];
@@ -43,7 +25,6 @@ in
     # Desktop applications
     unstable.discord
     epsonscan2
-    fastfetch
     gajim
     unstable.keepassxc
     unstable.nextcloud-client
@@ -51,7 +32,6 @@ in
     onlyoffice-desktopeditors
     signal-desktop
     unstable.stremio-linux-shell
-    unzip
 
     # Hardware tools
     libva-utils
@@ -64,38 +44,6 @@ in
     kdePackages.partitionmanager
     hardinfo2
     vlc
-
-    # Development and CLI tools
-    htop
-    unstable.nodejs
-    bubblewrap
-    cosign
-    file
-    yq
-    jq
-    curl
-    tree
-    nil
-    nixd
-    nix-index
-    nixfmt
-    statix
-    deadnix
-    dnsutils
-    socat
-    unstable.zed-editor
-    unstable.sops
-    unstable.gh
-    unstable.talosctl
-    unstable.kubectl
-    unstable.kubectl-cnpg
-    unstable.kubernetes-helm
-    ha-mcp
-
-    # Python and packages
-    (python313.withPackages (ps: with ps; [
-      pyyaml
-    ]))
 
     # Filesystem, encryption, and install support
     btrfs-progs
@@ -111,10 +59,6 @@ in
     yubikey-personalization
   ];
 
-  systemd.tmpfiles.rules = [
-    "d /var/lib/ha-mcp 0700 root root -"
-  ];
-
   programs = {
     firefox = {
       enable = true;
@@ -123,9 +67,7 @@ in
         "widget.use-xdg-desktop-portal.file-picker" = 1;
       };
     };
-    git.enable = true;
     thunderbird.enable = true;
-    vim.enable = true;
     virt-manager.enable = true;
     zoom-us = {
       enable = true;

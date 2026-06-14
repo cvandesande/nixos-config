@@ -49,6 +49,15 @@ let
             mountOptions = btrfsMountOptions;
           };
 
+          "@docker" = {
+            mountpoint = "/var/lib/docker";
+            mountOptions = [
+              "noatime"
+              "discard=async"
+              "nodatacow"
+            ];
+          };
+
           "@snapshots" = {
             mountpoint = "/.snapshots";
             mountOptions = btrfsMountOptions;
