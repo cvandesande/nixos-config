@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   pkgsUnstable,
   ...
 }:
@@ -17,6 +18,7 @@
 
   environment.systemPackages = [
     config.boot.zfs.package
+    pkgs.nvd
   ];
 
   networking.networkmanager.enable = true;
@@ -37,8 +39,27 @@
     allowReboot = false;
   };
 
+  system.activationScripts.diffGens = ''
+    (
+      PATH=$PATH:${pkgs.nix}/bin
+      {
+        echo "===== $(date -Iseconds) ====="
+        ${pkgs.nvd}/bin/nvd diff /run/current-system "$systemConfig"
+        echo
+      } | tee -a /var/log/nixos-upgrades.log
+    )
+  '';
+
   services = {
     fstrim.enable = false;
+
+    logrotate.settings."/var/log/nixos-upgrades.log" = {
+      frequency = "weekly";
+      rotate = 8;
+      compress = true;
+      missingok = true;
+      notifempty = true;
+    };
 
     btrfs.autoScrub = {
       enable = true;
