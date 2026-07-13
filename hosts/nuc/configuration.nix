@@ -74,4 +74,22 @@
   };
 
   services.thermald.enable = true;
+
+  # ZFS support is enabled globally by default in modules/profiles/workstation.nix
+  # (used by both nuc and liltig). This host has no local ZFS pools (storage is
+  # LUKS+btrfs) and doesn't need it, so opt out here.
+  workstation.zfs.enable = false;
+
+  fileSystems."/home/cvandesande/mnt/whiterock" = {
+    device = "whiterock:/zfspool/Downloads";
+    fsType = "nfs4";
+    options = [
+      "defaults"
+      "noauto"
+      "noatime"
+      "users"
+      "bg"
+      "x-systemd.mkdir"
+    ];
+  };
 }

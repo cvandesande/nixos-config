@@ -14,4 +14,9 @@
   time.timeZone = "Europe/Dublin";
 
   boot.kernelPackages = pkgsUnstable.linuxPackages_xanmod_latest;
+
+  # ZFS support is enabled globally by default in modules/profiles/workstation.nix
+  # (used by both nuc and liltig). This host has no local ZFS pools (storage is
+  # LUKS+btrfs) and doesn't need it, so opt out here.
+  workstation.zfs.enable = false;
 }
