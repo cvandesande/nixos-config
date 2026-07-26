@@ -51,6 +51,24 @@
       allowReboot = false;
     };
 
+    systemd.services.nixos-upgrade.onSuccess = [ "flake-lock-commit.service" ];
+
+    systemd.services.flake-lock-commit = {
+      description = "Commit updated flake.lock after a successful nixos-upgrade";
+      path = [ pkgs.git ];
+      serviceConfig = {
+        Type = "oneshot";
+        User = "cvandesande";
+        WorkingDirectory = "/home/cvandesande/nixos-config";
+      };
+      script = ''
+        if ! git diff --quiet -- flake.lock; then
+          git add flake.lock
+          git commit -m "flake.lock: automated update $(date -I)"
+        fi
+      '';
+    };
+
     system.activationScripts.diffGens = ''
       (
         PATH=$PATH:${pkgs.nix}/bin
