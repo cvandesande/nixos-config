@@ -1,0 +1,12 @@
+# Nix build outputs
+result
+result-*
+
+# direnv
+.direnv/
+.envrc.local
+
+# editor/OS cruft
+.DS_Store
+*.swp
+*~
