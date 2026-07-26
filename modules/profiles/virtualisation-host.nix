@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 
 {
   users.users.cvandesande.extraGroups = [
@@ -25,6 +25,7 @@
 
     libvirtd = {
       enable = true;
+      extraOptions = [ "--timeout" "0" ];
       qemu = {
         package = pkgs.qemu_kvm;
         runAsRoot = true;
@@ -34,4 +35,7 @@
 
     spiceUSBRedirection.enable = true;
   };
+
+  # Don't start libvirtd by default
+  systemd.services.libvirtd.wantedBy = lib.mkForce [ ];
 }
