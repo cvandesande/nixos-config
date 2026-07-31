@@ -104,7 +104,17 @@ in
       enable = true;
       nix-direnv.enable = true;
     };
-    git.enable = true;
+    # A system-level identity so unattended commits work on a fresh install;
+    # flake-lock-commit.service in modules/profiles/workstation.nix runs
+    # `git commit` as cvandesande before any ~/.gitconfig exists. A per-user
+    # ~/.gitconfig still takes precedence over this.
+    git = {
+      enable = true;
+      config.user = {
+        name = "CVan";
+        email = "cvandesande@opendmz.com";
+      };
+    };
     vim.enable = true;
   };
 

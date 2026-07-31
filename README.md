@@ -120,24 +120,7 @@ cp -a . /mnt/etc/nixos/
 cd /mnt/etc/nixos
 ```
 
-## 6. Generate hardware configuration
-
-Disko owns the filesystem layout, so generate hardware config without
-filesystem entries:
-
-```bash
-nixos-generate-config --no-filesystems --root /mnt
-cp hardware-configuration.nix "hosts/$HOST/hardware-configuration.nix"
-rm configuration.nix hardware-configuration.nix
-```
-
-Inspect the generated host hardware config:
-
-```bash
-cat "hosts/$HOST/hardware-configuration.nix"
-```
-
-## 7. Install NixOS
+## 6. Install NixOS
 
 ### `nix-vm-*` hosts
 
@@ -205,7 +188,7 @@ Then reboot:
 reboot
 ```
 
-## 8. After first boot
+## 7. After first boot
 
 For day-to-day work, manage this flake from the user's home directory. Copy the
 installed repo there after the first boot:
@@ -224,18 +207,7 @@ git clone https://github.com/cvandesande/nixos-config.git ~/nixos-config
 cd ~/nixos-config
 ```
 
-If a generated hardware configuration was created during install, commit it from
-the home-directory clone:
-
-```bash
-git status
-HOST=$(hostname)
-git add "hosts/$HOST/hardware-configuration.nix" flake.lock
-git commit -m "Add $HOST hardware configuration"
-git push
-```
-
-## 9. Workstation only: enable Secure Boot, then enroll TPM2 unlock
+## 8. Workstation only: enable Secure Boot, then enroll TPM2 unlock
 
 Skip this section for `nix-vm-*`; it does not use Lanzaboote, Secure Boot
 signing, LUKS, TPM2 unlock, or FIDO2 unlock.
@@ -251,7 +223,7 @@ TPM2 token using the passphrase.
 
 ### Build the Secure Boot generation
 
-If the host was installed with the workstation flow in section 7, the signing
+If the host was installed with the workstation flow in section 6, the signing
 keys already exist and the booted generation is already signed. Verify and skip
 ahead to "Enroll Secure Boot keys in firmware":
 
@@ -419,7 +391,7 @@ sudo systemd-cryptenroll \
 Do not remove the passphrase slot until every intended unlock path has been
 tested.
 
-## 10. Workstation only: YubiKey SSH agent
+## 9. Workstation only: YubiKey SSH agent
 
 Skip this section for `nix-vm-*`.
 
