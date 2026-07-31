@@ -97,20 +97,6 @@
 
         nix-vm-x86_64 = mkVm "x86_64-linux";
         nix-vm-aarch64 = mkVm "aarch64-linux";
-
-        # Exercises the Lanzaboote + LUKS install flow in a VM. Not for
-        # hardware; see hosts/install-test/configuration.nix.
-        install-test = mkNixos "x86_64-linux" (
-          [
-            disko.nixosModules.disko
-            lanzaboote.nixosModules.lanzaboote
-          ]
-          ++ baseModules
-          ++ [
-            ./modules/profiles/secure-boot-luks.nix
-            ./hosts/install-test/configuration.nix
-          ]
-        );
       };
     };
 }
