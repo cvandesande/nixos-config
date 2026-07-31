@@ -31,7 +31,8 @@
 
     environment.systemPackages = [
       pkgs.nvd
-    ] ++ lib.optional config.workstation.zfs.enable config.boot.zfs.package;
+    ]
+    ++ lib.optional config.workstation.zfs.enable config.boot.zfs.package;
 
     networking.networkmanager.enable = true;
 

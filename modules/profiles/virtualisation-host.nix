@@ -30,7 +30,10 @@
 
     libvirtd = {
       enable = true;
-      extraOptions = [ "--timeout" "0" ];
+      extraOptions = [
+        "--timeout"
+        "0"
+      ];
       qemu = {
         package = pkgs.qemu_kvm;
         runAsRoot = true;
