@@ -221,33 +221,43 @@ enable and verify Secure Boot before enrolling the TPM2 LUKS token. If Secure
 Boot is enabled, disabled, reset, or re-keyed later, expect to re-enroll the
 TPM2 token using the passphrase.
 
-### Build the Secure Boot generation
+### Verify the signed generation
 
-If the host was installed with the workstation flow in section 6, the signing
-keys already exist and the booted generation is already signed. Verify and skip
-ahead to "Enroll Secure Boot keys in firmware":
+Nothing to build here. The section 6 install already created the signing keys
+and signed the first generation, so just check it:
 
 ```bash
 sudo sbctl verify
 ```
 
-This subsection is only needed when enabling Lanzaboote on a host that was
-installed without it, which is how `nuc` was originally set up.
+Expect the bootloader and `/boot/EFI/Linux/nixos-generation-*.efi` to be signed.
 
-Set `HOST` to the flake host being configured:
+An unsigned `/boot/EFI/nixos/kernel-*.efi` is **expected and correct**.
+Lanzaboote does not boot that file. The signed stub carries the kernel and
+initrd hashes in its `.linuxh` and `.initrdh` PE sections and verifies them at
+boot, so the kernel is covered by the stub's signature and needs none of its
+own. sbctl cannot see that second link, so it reports the raw kernel as
+unsigned.
+
+Then continue at "Enroll Secure Boot keys in firmware" below.
+
+### Retrofitting Lanzaboote onto an existing install
+
+Skip this if the host was installed with the section 6 flow. It applies only to
+a host installed *without* Lanzaboote, which is how `nuc` was originally set up.
 
 ```bash
 cd ~/nixos-config
 HOST=$(hostname)
 ```
 
-The host config uses Lanzaboote and stores Secure Boot signing keys in
-`/var/lib/sbctl`. Create the keys before the first successful Lanzaboote switch:
+Create the signing keys before the first Lanzaboote switch. `sbctl` is in
+`environment.systemPackages`, so no `nix build` is needed. The command is
+idempotent: on a host that already has keys it reports "Secure boot keys have
+already been created" and leaves them untouched.
 
 ```bash
-nix build nixpkgs#sbctl
-sudo ./result/bin/sbctl create-keys
-rm result
+sudo sbctl create-keys
 ```
 
 Build and switch to the signed generation:
