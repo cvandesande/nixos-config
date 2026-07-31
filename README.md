@@ -199,13 +199,25 @@ sudo chown -R "$USER:$(id -gn)" ~/nixos-config
 cd ~/nixos-config
 ```
 
-If `/etc/nixos` is missing or you prefer a fresh checkout, clone the repo
-instead:
+That copy inherits the installer's HTTPS remote from section 2, which has no
+way to authenticate a push. Switch it to SSH, which uses the YubiKey through
+gpg-agent:
 
 ```bash
-git clone https://github.com/cvandesande/nixos-config.git ~/nixos-config
+git remote set-url origin git@github.com:cvandesande/nixos-config.git
+git remote -v
+```
+
+If `/etc/nixos` is missing or you prefer a fresh checkout, clone over SSH
+directly instead:
+
+```bash
+git clone git@github.com:cvandesande/nixos-config.git ~/nixos-config
 cd ~/nixos-config
 ```
+
+Section 2 clones over HTTPS on purpose: the installer has no keys and no
+gpg-agent. Only this home-directory checkout needs to push.
 
 ## 8. Workstation only: enable Secure Boot, then enroll TPM2 unlock
 
