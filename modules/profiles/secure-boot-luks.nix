@@ -6,7 +6,10 @@
       timeout = 0;
       systemd-boot = {
         enable = lib.mkForce false;
-        configurationLimit = lib.mkDefault 3;
+        # Lanzaboote reads this option and passes it to `lzbt install`. Each
+        # retained generation is a full unified kernel image on the ESP, so
+        # this is bounded by espSize in modules/storage/luks-btrfs.nix.
+        configurationLimit = lib.mkDefault 7;
         editor = false;
       };
 

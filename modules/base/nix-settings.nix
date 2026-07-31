@@ -15,7 +15,7 @@
     automatic = true;
     dates = "weekly";
     randomizedDelaySec = "45min";
-    options = "--delete-older-than 30d";
+    options = "--delete-older-than 7d";
   };
 
   system.stateVersion = "26.05";
