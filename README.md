@@ -20,7 +20,8 @@ The shared Disko layouts live in:
 modules/storage/luks-btrfs.nix
 modules/storage/ext4-simple.nix
 ```
-Each host has a small `disk-config.nix` that supplies only its target disk.
+Each host's `configuration.nix` imports one of these layouts and supplies only
+its target disk.
 During install, set `HOST` to the target being installed. After booting the
 installed system, `HOST=$(hostname)` should match one of these flake outputs.
 
@@ -94,7 +95,7 @@ Confirm the selected host and inspect its disk config before running Disko:
 
 ```bash
 echo "$HOST"
-cat "hosts/$HOST/disk-config.nix"
+cat "hosts/$HOST/configuration.nix"
 ```
 
 ## 4. Partition, format, and mount
@@ -138,14 +139,64 @@ cat "hosts/$HOST/hardware-configuration.nix"
 
 ## 7. Install NixOS
 
+### `nix-vm-*` hosts
+
+These do not use Lanzaboote, so the plain install handles the bootloader:
+
 ```bash
 nixos-install --flake ".#$HOST"
 ```
 
+### Workstation hosts (`liltig`, `nuc`)
+
+The workstation profile enables Lanzaboote, and its bootloader installer is
+invoked as:
+
+```text
+lzbt install --allow-unsigned false \
+  --public-key /var/lib/sbctl/keys/db/db.pem \
+  --private-key /var/lib/sbctl/keys/db/db.key ...
+```
+
+Those keys do not exist yet on a freshly partitioned disk, and
+`systemd-boot` is disabled by `modules/profiles/secure-boot-luks.nix`, so there
+is no fallback. A plain `nixos-install` fails at the bootloader step. Install
+the system first, create the keys inside it, then install the bootloader:
+
+```bash
+# 1. Install the system, leaving the bootloader alone.
+nixos-install --flake ".#$HOST" --no-bootloader
+
+# 2. Create the Secure Boot signing keys inside the new system.
+#    sbctl is already in the system closure, and its default key location
+#    (/var/lib/sbctl) is what boot.lanzaboote.pkiBundle expects.
+nixos-enter --root /mnt -c '/run/current-system/sw/bin/sbctl create-keys'
+
+# 3. Install the signed bootloader.
+NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt \
+  -c '/run/current-system/bin/switch-to-configuration boot'
+```
+
+`NIXOS_INSTALL_BOOTLOADER=1` is required. Without it,
+`switch-to-configuration boot` only updates an existing bootloader instead of
+installing one, which leaves the ESP without boot entries. This is the same
+environment and command `nixos-install` itself uses when it installs the
+bootloader.
+
+Absolute paths matter here. `nixos-enter -c` runs `bash -c`, not a login
+shell, so `/etc/profile` is never sourced and `PATH` still points at the
+installer environment rather than the target's `/run/current-system/sw/bin`.
+A bare `sbctl` would fail with "command not found".
+
+If `sbctl create-keys` fails under the chroot, retry it as
+`/run/current-system/sw/bin/sbctl --disable-landlock create-keys`.
+
+### Both
+
 Set the normal user password before rebooting:
 
 ```bash
-nixos-enter --root /mnt -c 'passwd cvandesande'
+nixos-enter --root /mnt -c '/run/current-system/sw/bin/passwd cvandesande'
 ```
 
 Then reboot:
@@ -199,6 +250,17 @@ Boot is enabled, disabled, reset, or re-keyed later, expect to re-enroll the
 TPM2 token using the passphrase.
 
 ### Build the Secure Boot generation
+
+If the host was installed with the workstation flow in section 7, the signing
+keys already exist and the booted generation is already signed. Verify and skip
+ahead to "Enroll Secure Boot keys in firmware":
+
+```bash
+sudo sbctl verify
+```
+
+This subsection is only needed when enabling Lanzaboote on a host that was
+installed without it, which is how `nuc` was originally set up.
 
 Set `HOST` to the flake host being configured:
 
