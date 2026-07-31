@@ -47,13 +47,7 @@
   ];
 
   programs = {
-    firefox = {
-      enable = true;
-      package = pkgsUnstable.firefox;
-      preferences = {
-        "widget.use-xdg-desktop-portal.file-picker" = 1;
-      };
-    };
+    firefox.enable = true;
     thunderbird.enable = true;
     virt-manager.enable = true;
     zoom-us = {
