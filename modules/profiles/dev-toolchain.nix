@@ -56,6 +56,7 @@ in
     shellcheck
     shfmt
     socat
+    tio
     tree
     unzip
     wget

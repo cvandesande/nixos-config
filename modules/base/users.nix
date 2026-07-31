@@ -6,6 +6,8 @@
     isNormalUser = true;
     description = "Chris";
     extraGroups = [
+      # USB serial adapters, for tio and friends.
+      "dialout"
       "plugdev"
       "wheel"
     ];
