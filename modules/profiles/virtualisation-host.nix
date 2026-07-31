@@ -26,9 +26,6 @@
     docker = {
       enable = true;
       storageDriver = "btrfs";
-      daemon.settings = {
-        features.containerd-snapshotter = true;
-      };
     };
 
     libvirtd = {

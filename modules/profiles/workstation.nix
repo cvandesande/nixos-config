@@ -103,8 +103,15 @@
           snapshot_preserve = "7d";
           snapshot_preserve_min = "latest";
 
-          volume."/home" = {
-            snapshot_dir = "/.snapshots/home";
+          # btrbk needs a subvolume section; a bare volume section snapshots
+          # nothing ("No subvolume configured"). /home is the @home subvolume,
+          # so address it as a subvolume of the / volume. snapshot_dir is
+          # relative to the volume directory, and /.snapshots is the @snapshots
+          # subvolume created by modules/storage/luks-btrfs.nix.
+          volume."/" = {
+            subvolume."home" = {
+              snapshot_dir = "/.snapshots";
+            };
           };
         };
       };
