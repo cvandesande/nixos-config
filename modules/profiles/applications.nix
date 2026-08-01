@@ -8,43 +8,51 @@
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ ];
 
-  environment.systemPackages = with pkgs; [
-    # Desktop applications
-    pkgsUnstable.discord
-    epsonscan2
-    gajim
-    pkgsUnstable.keepassxc
-    pkgsUnstable.nextcloud-client
-    pkgsUnstable.obsidian
-    onlyoffice-desktopeditors
-    signal-desktop
-    pkgsUnstable.stremio-linux-shell
+  environment = {
+    systemPackages = with pkgs; [
+      # Desktop applications
+      pkgsUnstable.discord
+      epsonscan2
+      gajim
+      pkgsUnstable.keepassxc
+      pkgsUnstable.nextcloud-client
+      pkgsUnstable.obsidian
+      onlyoffice-desktopeditors
+      signal-desktop
+      pkgsUnstable.stremio-linux-shell
 
-    # Hardware tools
-    libva-utils
-    pciutils
-    vulkan-tools
+      # Hardware tools
+      libva-utils
+      pciutils
+      vulkan-tools
 
-    # KDE specific
-    papirus-icon-theme
-    kdePackages.isoimagewriter
-    kdePackages.partitionmanager
-    hardinfo2
-    vlc
+      # KDE specific
+      papirus-icon-theme
+      kdePackages.isoimagewriter
+      kdePackages.partitionmanager
+      hardinfo2
+      vlc
 
-    # Filesystem, encryption, and install support
-    btrfs-progs
-    compsize
-    cryptsetup
-    sbctl
-    tpm2-tools
+      # Filesystem, encryption, and install support
+      btrfs-progs
+      compsize
+      cryptsetup
+      sbctl
+      tpm2-tools
 
-    # YubiKey, FIDO2, and GPG/SSH-agent support
-    libfido2
-    pinentry-qt
-    yubikey-manager
-    yubikey-personalization
-  ];
+      # YubiKey, FIDO2, and GPG/SSH-agent support
+      libfido2
+      pinentry-qt
+      kdePackages.ksshaskpass
+      yubikey-manager
+      yubikey-personalization
+    ];
+
+    sessionVariables = {
+      SSH_ASKPASS = "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
+      SSH_ASKPASS_REQUIRE = "force";
+    };
+  };
 
   programs = {
     firefox.enable = true;
