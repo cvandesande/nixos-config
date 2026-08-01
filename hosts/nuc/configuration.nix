@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  pkgsUnstable,
   ...
 }:
 
@@ -17,11 +16,7 @@
   networking.hostName = "nuc";
   networking.hostId = "d95c8e8b";
 
-  time.timeZone = "Europe/Dublin";
-
   boot = {
-    kernelPackages = pkgsUnstable.linuxPackages_xanmod_latest;
-
     initrd = {
       availableKernelModules = [
         "xhci_pci"
@@ -60,17 +55,8 @@
     ];
   };
 
-  nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-
   environment.sessionVariables = {
     LIBVA_DRIVER_NAME = "i965";
-  };
-
-  programs = {
-    # This NUC has only USB-A ports, so use OpenSSH's agent for KeePassXC
-    # instead of gpg-agent's YubiKey-oriented SSH support.
-    ssh.startAgent = true;
-    gnupg.agent.enableSSHSupport = false;
   };
 
   services.thermald.enable = true;

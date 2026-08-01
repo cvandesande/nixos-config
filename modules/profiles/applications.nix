@@ -77,13 +77,15 @@
       }
     ];
 
-    # Use gpg-agent as the default SSH agent so SSH keys can live on a YubiKey.
-    # Hosts can override this when they need a different agent backend.
-    ssh.startAgent = lib.mkDefault false;
+    # SSH keys live on a YubiKey as FIDO2 credentials (sk-ssh-ed25519), not
+    # GPG. Use OpenSSH's own agent so it's the only one offering identities;
+    # gpg-agent's SSH support previously shadowed the FIDO2 key with the
+    # YubiKey's OpenPGP auth subkey, which has touch confirmation disabled.
+    ssh.startAgent = lib.mkDefault true;
 
     gnupg.agent = {
       enable = true;
-      enableSSHSupport = lib.mkDefault true;
+      enableSSHSupport = lib.mkDefault false;
       pinentryPackage = pkgs.pinentry-qt;
     };
   };

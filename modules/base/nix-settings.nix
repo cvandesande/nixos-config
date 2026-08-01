@@ -19,4 +19,6 @@
   };
 
   system.stateVersion = "26.05";
+
+  time.timeZone = "Europe/Dublin";
 }

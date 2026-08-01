@@ -19,15 +19,17 @@
   };
 
   config = {
-    hardware.enableRedistributableFirmware = true;
+    boot = {
+      kernelPackages = lib.mkDefault pkgsUnstable.linuxPackages_xanmod_latest;
 
-    boot = lib.mkIf config.workstation.zfs.enable {
-      supportedFilesystems = [ "zfs" ];
-      zfs = {
+      supportedFilesystems = lib.mkIf config.workstation.zfs.enable [ "zfs" ];
+      zfs = lib.mkIf config.workstation.zfs.enable {
         package = pkgsUnstable.zfs;
         forceImportRoot = false;
       };
     };
+
+    hardware.enableRedistributableFirmware = true;
 
     environment.systemPackages = [
       pkgs.nvd

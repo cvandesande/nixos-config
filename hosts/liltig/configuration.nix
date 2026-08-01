@@ -1,7 +1,6 @@
 {
   config,
   lib,
-  pkgsUnstable,
   ...
 }:
 
@@ -15,10 +14,6 @@
 
   networking.hostName = "liltig";
   networking.hostId = "534d981c";
-
-  time.timeZone = "Europe/Dublin";
-
-  boot.kernelPackages = pkgsUnstable.linuxPackages_xanmod_latest;
 
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
