@@ -83,16 +83,9 @@
       }
     ];
 
-    # SSH keys live on a YubiKey as FIDO2 credentials (sk-ssh-ed25519), not
-    # GPG. Use OpenSSH's own agent so it's the only one offering identities;
-    # gpg-agent's SSH support previously shadowed the FIDO2 key with the
-    # YubiKey's OpenPGP auth subkey, which has touch confirmation disabled.
+    # FIDO2 Key support
     ssh = {
       startAgent = lib.mkDefault true;
-      # Defaults to services.xserver.enable, which is false on these
-      # Wayland-only Plasma hosts; without it the ssh-agent systemd user
-      # service never gets its own $SSH_ASKPASS wired up, so touch/PIN
-      # prompts have nowhere to go.
       enableAskPassword = true;
       askPassword = "${pkgs.kdePackages.ksshaskpass}/bin/ksshaskpass";
     };
