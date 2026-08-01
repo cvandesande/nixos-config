@@ -7,6 +7,8 @@
       "flakes"
     ];
     auto-optimise-store = true;
+    sandbox = true;
+    trusted-users = [ "root" ];
   };
 
   # system.autoUpgrade runs daily, so collect the superseded closures on a
