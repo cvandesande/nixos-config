@@ -10,12 +10,7 @@
   options.workstation.zfs.enable = lib.mkOption {
     type = lib.types.bool;
     default = true;
-    description = ''
-      Whether to enable ZFS kernel module and userspace tooling for this
-      workstation host. Defaults to on; set to false per-host to opt out
-      (e.g. when the host has no ZFS use case, or the pinned kernel is
-      temporarily ahead of the ZFS release's supported kernel range).
-    '';
+    description = "Enable ZFS kernel module and userspace tooling (default: on).";
   };
 
   config = {
@@ -106,11 +101,7 @@
           snapshot_preserve = "7d";
           snapshot_preserve_min = "latest";
 
-          # btrbk needs a subvolume section; a bare volume section snapshots
-          # nothing ("No subvolume configured"). /home is the @home subvolume,
-          # so address it as a subvolume of the / volume. snapshot_dir is
-          # relative to the volume directory, and /.snapshots is the @snapshots
-          # subvolume created by modules/storage/luks-btrfs.nix.
+          # btrbk requires a subvolume entry; /.snapshots is @snapshots from luks-btrfs.nix.
           volume."/" = {
             subvolume."home" = {
               snapshot_dir = "/.snapshots";

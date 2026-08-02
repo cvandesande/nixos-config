@@ -22,6 +22,7 @@
       pkgsUnstable.stremio-linux-shell
 
       # Hardware tools
+      amdgpu_top
       libva-utils
       pciutils
       vulkan-tools
@@ -55,6 +56,7 @@
 
   programs = {
     firefox.enable = true;
+    kdeconnect.enable = true;
     thunderbird.enable = true;
     virt-manager.enable = true;
     zoom-us = {
@@ -94,6 +96,21 @@
       enable = true;
       enableSSHSupport = lib.mkDefault false;
       pinentryPackage = pkgs.pinentry-qt;
+    };
+  };
+
+  # Add FIDO2 key to ssh-agent at login so touch prompts reach ksshaskpass (no touch/PIN needed to add).
+  systemd.user.services.ssh-add-fido2 = {
+    description = "Add FIDO2 SSH key to agent";
+    after = [ "ssh-agent.service" ];
+    requires = [ "ssh-agent.service" ];
+    wantedBy = [ "default.target" ];
+    unitConfig.ConditionPathExists = "%h/.ssh/id_ed25519_sk";
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      Environment = "SSH_AUTH_SOCK=%t/ssh-agent";
+      ExecStart = "${pkgs.openssh}/bin/ssh-add %h/.ssh/id_ed25519_sk";
     };
   };
 }

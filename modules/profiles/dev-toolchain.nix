@@ -105,10 +105,7 @@ in
       enable = true;
       nix-direnv.enable = true;
     };
-    # A system-level identity so unattended commits work on a fresh install;
-    # flake-lock-commit.service in modules/profiles/workstation.nix runs
-    # `git commit` as cvandesande before any ~/.gitconfig exists. A per-user
-    # ~/.gitconfig still takes precedence over this.
+    # System-level git identity for unattended flake.lock commits (per-user ~/.gitconfig overrides).
     git = {
       enable = true;
       config.user = {

@@ -13,9 +13,7 @@
     ];
   };
 
-  # Allow non-root users to mount and unmount NFS filesystems explicitly marked
-  # "user" or "users" in fstab. The generic commands enforce the fstab policy;
-  # the NFS-specific helpers need privilege to perform the actual operations.
+  # Allow non-root NFS mount/unmount for fstab entries marked "users".
   security.wrappers."mount.nfs4" = {
     source = "${pkgs.nfs-utils}/bin/mount.nfs4";
     owner = "root";

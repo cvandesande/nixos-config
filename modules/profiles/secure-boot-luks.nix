@@ -26,9 +26,7 @@
       # passphrase prompts.
       systemd.enable = true;
 
-      # These options are used only after matching LUKS2 token slots have been
-      # enrolled with systemd-cryptenroll. The original passphrase remains a
-      # fallback unless you explicitly remove that LUKS slot.
+      # TPM2/FIDO2 LUKS unlock (passphrase remains fallback unless slot removed).
       luks.devices.crypted.crypttabExtraOpts = [
         "tpm2-device=auto"
         "fido2-device=auto"
@@ -46,10 +44,7 @@
     ];
   };
 
-  # Temporary validation for nixos/swapDevices.randomEncryption:
-  # mkswap writes the swap signature after the dm-crypt mapper is created, but
-  # udev sometimes keeps the mapper at SYSTEMD_READY=0. Re-trigger probing
-  # before the generated .swap unit is allowed to start.
+  # Workaround: re-trigger udev probing so dm-crypt mapper is ready before the swap unit starts.
   systemd.services.mkswap-dev-disk-byx2dpartlabel-diskx2dmainx2dswap.serviceConfig.ExecStartPost =
     let
       mapperDevice = "/dev/mapper/dev-disk-byx2dpartlabel-diskx2dmainx2dswap";

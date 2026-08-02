@@ -136,11 +136,8 @@ in
       powerOnBoot = true;
       settings = {
         General = {
-          # Shows battery charge of connected devices on supported Bluetooth
-          # adapters.
+          # Battery status on supported adapters; faster connect at higher power cost.
           Experimental = true;
-          # Lets other devices connect faster at the cost of increased power
-          # consumption.
           FastConnectable = true;
         };
       };

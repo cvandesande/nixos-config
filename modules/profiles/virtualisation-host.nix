@@ -9,10 +9,7 @@
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
   boot.binfmt.preferStaticEmulators = true;
 
-  # Disable CoW on directories holding large, randomly-rewritten files. Btrfs
-  # otherwise fragments them badly. +C only applies to files created after the
-  # attribute is set, so these directories must be empty when it lands, which
-  # is why they are created here rather than by the services themselves.
+  # Disable CoW on Docker/libvirt dirs to prevent btrfs fragmentation (dirs created here so +C applies).
   systemd.tmpfiles.rules = [
     "d /var/lib/docker 0711 root root -"
     "h /var/lib/docker - - - - +C"
