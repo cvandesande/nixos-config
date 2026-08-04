@@ -37,6 +37,7 @@
 
       # Filesystem, encryption, and install support
       btrfs-progs
+      ncdu
       compsize
       cryptsetup
       sbctl
