@@ -56,8 +56,4 @@
     extraModulePackages = [ ];
   };
 
-  services = {
-    displayManager.sddm.enable = lib.mkForce false;
-    desktopManager.plasma6.enable = lib.mkForce false;
-  };
 }

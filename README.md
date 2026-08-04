@@ -200,8 +200,7 @@ cd ~/nixos-config
 ```
 
 That copy inherits the installer's HTTPS remote from section 2, which has no
-way to authenticate a push. Switch it to SSH, which uses the YubiKey through
-gpg-agent:
+way to authenticate a push. Switch it to SSH:
 
 ```bash
 git remote set-url origin git@github.com:cvandesande/nixos-config.git
@@ -216,8 +215,8 @@ git clone git@github.com:cvandesande/nixos-config.git ~/nixos-config
 cd ~/nixos-config
 ```
 
-Section 2 clones over HTTPS on purpose: the installer has no keys and no
-gpg-agent. Only this home-directory checkout needs to push.
+Section 2 clones over HTTPS on purpose: the installer has no SSH keys.
+Only this home-directory checkout needs to push.
 
 ## 8. Workstation only: enable Secure Boot, then enroll TPM2 unlock
 
@@ -417,14 +416,17 @@ tested.
 
 Skip this section for `nix-vm-*`.
 
-The system is configured to use `gpg-agent` as the SSH agent and includes the
-YubiKey/FIDO2 tools. After adding or importing an SSH-capable GPG key onto the
-YubiKey, verify it with:
+The system uses the OpenSSH agent with the FIDO2 key auto-added at login
+(via the `ssh-add-fido2` user service). Verify the key is loaded:
 
 ```bash
-gpg --card-status
-gpg-connect-agent updatestartuptty /bye
 ssh-add -L
+```
+
+If the key is not listed, check the service status:
+
+```bash
+systemctl --user status ssh-add-fido2
 ```
 
 ## Daily rebuild flow

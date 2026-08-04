@@ -103,6 +103,7 @@
       enableSSHSupport = lib.mkDefault false;
       pinentryPackage = pkgs.pinentry-qt;
     };
+
   };
 
   # Add FIDO2 key to ssh-agent at login so touch prompts reach ksshaskpass (no touch/PIN needed to add).
