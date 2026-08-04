@@ -6,7 +6,10 @@
 }:
 
 {
-  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ ];
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "steam"
+    "steam-unwrapped"
+  ];
 
   environment = {
     systemPackages = with pkgs; [
@@ -60,6 +63,7 @@
     firefox.enable = true;
     kdeconnect.enable = true;
     thunderbird.enable = true;
+    steam.enable = true;
     virt-manager.enable = true;
     zoom-us = {
       enable = true;

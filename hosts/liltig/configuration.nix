@@ -30,7 +30,7 @@
   virtualisation.oci-containers = {
     backend = "docker";
     containers.llama-swap = {
-      image = "ghcr.io/mostlygeek/llama-swap:v235-vulkan-b9870";
+      image = "ghcr.io/mostlygeek/llama-swap:vulkan";
       autoStart = false;
       ports = [ "127.0.0.1:8080:8080" ];
       volumes = [

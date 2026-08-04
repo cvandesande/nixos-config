@@ -28,6 +28,7 @@ in
     pkgsUnstable.kubernetes-helm
     pkgsUnstable.sops
     pkgsUnstable.talosctl
+    pkgsUnstable.rtk
 
     # Unstable runtimes and editors
     pkgsUnstable.nodejs
@@ -36,14 +37,16 @@ in
     # CLI utilities
     bubblewrap
     cosign
+    crane
     curl
     dnsutils
     fastfetch
+    gnumake
     fd
     file
     htop
+    openssl
     jq
-    ripgrep
     tio
     tree
     unzip
