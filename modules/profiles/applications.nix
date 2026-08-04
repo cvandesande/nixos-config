@@ -11,6 +11,7 @@
   environment = {
     systemPackages = with pkgs; [
       # Desktop applications
+      chromium
       pkgsUnstable.discord
       epsonscan2
       gajim

@@ -176,6 +176,8 @@ in
   };
 
   system.userActivationScripts.notify-reboot-required = ''
-    ${pkgs.systemd}/bin/systemctl --user start notify-reboot-required.service || true
+    # --no-block: notify-send can stall ~25s per D-Bus call when the
+    # notification daemon isn't up yet, which would block activation.
+    ${pkgs.systemd}/bin/systemctl --user --no-block start notify-reboot-required.service || true
   '';
 }

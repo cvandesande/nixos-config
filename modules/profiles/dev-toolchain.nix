@@ -33,19 +33,10 @@ in
     pkgsUnstable.nodejs
     pkgsUnstable.zed-editor
 
-    # C/C++
-    clang
-    cmake
-    gdb
-    gnumake
-    pkg-config
-
     # CLI utilities
-    bat
     bubblewrap
     cosign
     curl
-    delta
     dnsutils
     fastfetch
     fd
@@ -53,19 +44,11 @@ in
     htop
     jq
     ripgrep
-    shellcheck
-    shfmt
-    socat
     tio
     tree
     unzip
     wget
     yq
-
-    # Go
-    delve
-    go
-    gopls
 
     # Local tools
     ha-mcp
@@ -88,12 +71,6 @@ in
     ruff
     uv
 
-    # Rust
-    cargo
-    clippy
-    rustPlatform.rustLibSrc
-    rustc
-    rustfmt
   ];
 
   systemd.tmpfiles.rules = [

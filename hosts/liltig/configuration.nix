@@ -48,4 +48,17 @@
     llm-stop   = "systemctl stop docker-llama-swap";
     llm-status = "systemctl is-active docker-llama-swap";
   };
+
+  fileSystems."/home/cvandesande/mnt/whiterock" = {
+    device = "whiterock:/zfspool/Downloads";
+    fsType = "nfs4";
+    options = [
+      "defaults"
+      "noauto"
+      "noatime"
+      "users"
+      "bg"
+      "x-systemd.mkdir"
+    ];
+  };
 }
