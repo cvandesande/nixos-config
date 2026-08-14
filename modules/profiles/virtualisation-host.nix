@@ -25,6 +25,8 @@
       storageDriver = "btrfs";
     };
 
+    podman.enable = true;
+
     libvirtd = {
       enable = true;
       extraOptions = [
