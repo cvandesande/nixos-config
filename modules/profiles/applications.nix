@@ -7,6 +7,7 @@
 
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "discord"
     "steam"
     "steam-unwrapped"
   ];
@@ -15,7 +16,7 @@
     systemPackages = with pkgs; [
       # Desktop applications
       chromium
-      pkgsUnstable.discord
+      discord
       epsonscan2
       gajim
       pkgsUnstable.keepassxc
