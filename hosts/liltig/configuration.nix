@@ -21,13 +21,20 @@
   # No local ZFS pools (LUKS+btrfs storage), opt out of global workstation ZFS.
   workstation.zfs.enable = false;
 
-  # Strix Halo (gfx1151) GPU-accessible memory for local LLM inference. (Vulkan)
+  # Strix Halo Vulkan/RADV: 110 GiB GTT aperture and no unified-memory IOMMU overhead.
   boot.kernelParams = [
     "ttm.pages_limit=28835840"
     "ttm.page_pool_size=28835840"
   ];
 
-  # Strix Halo local LLM: v235-vulkan-b9870 is known-good on gfx1151 (later Vulkan builds regress).
+  # Prioritize inference throughput and disable higher-latency CPU idle states.
+  services.tuned = {
+    enable = true;
+    ppdSupport = false;
+    recommend.accelerator-performance = { };
+  };
+
+  # Strix Halo local LLM using llama-swap's current Vulkan llama.cpp build.
   virtualisation.oci-containers = {
     backend = "docker";
     containers.llama-swap = {
