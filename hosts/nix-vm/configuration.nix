@@ -7,6 +7,7 @@
 
 {
   imports = [
+    ../../modules/roles/development-vm.nix
     (modulesPath + "/profiles/qemu-guest.nix")
     (import ../../modules/storage/ext4-simple.nix {
       device = "/dev/vda";
