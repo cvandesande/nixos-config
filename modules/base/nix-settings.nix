@@ -19,8 +19,4 @@
     randomizedDelaySec = "45min";
     options = "--delete-older-than 7d";
   };
-
-  system.stateVersion = "26.05";
-
-  time.timeZone = "Europe/Dublin";
 }

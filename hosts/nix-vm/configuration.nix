@@ -32,6 +32,7 @@
   };
 
   time.timeZone = "Europe/Dublin";
+  system.stateVersion = "26.05";
 
   boot = {
     kernelPackages = pkgsUnstable.linuxPackages_latest;

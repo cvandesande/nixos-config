@@ -16,6 +16,9 @@
   networking.hostName = "liltig";
   networking.hostId = "534d981c";
 
+  time.timeZone = "Europe/Dublin";
+  system.stateVersion = "26.05";
+
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # No local ZFS pools (LUKS+btrfs storage), opt out of global workstation ZFS.

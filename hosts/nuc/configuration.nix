@@ -17,6 +17,9 @@
   networking.hostName = "nuc";
   networking.hostId = "d95c8e8b";
 
+  time.timeZone = "Europe/Dublin";
+  system.stateVersion = "26.05";
+
   boot = {
     initrd = {
       availableKernelModules = [
