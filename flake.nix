@@ -36,7 +36,6 @@
                 builtins.elem (nixpkgs.lib.getName pkg) [
                   "discord"
                   "obsidian"
-                  "stremio-linux-shell"
                   "zoom"
                 ];
             };

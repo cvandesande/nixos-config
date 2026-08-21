@@ -24,7 +24,6 @@
       pkgsUnstable.obsidian
       onlyoffice-desktopeditors
       signal-desktop
-      pkgsUnstable.stremio-linux-shell
 
       # Hardware tools
       amdgpu_top
