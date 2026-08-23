@@ -7,6 +7,7 @@
 
 {
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "google-chrome"
     "discord"
     "steam"
     "steam-unwrapped"
@@ -15,6 +16,7 @@
   environment = {
     systemPackages = with pkgs; [
       # Desktop applications
+      google-chrome
       chromium
       discord
       epsonscan2

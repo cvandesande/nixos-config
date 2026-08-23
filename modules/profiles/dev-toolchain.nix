@@ -29,6 +29,7 @@ in
     pkgsUnstable.sops
     pkgsUnstable.talosctl
     pkgsUnstable.rtk
+    pkgsUnstable.packer
 
     # Unstable runtimes and editors
     pkgsUnstable.nodejs

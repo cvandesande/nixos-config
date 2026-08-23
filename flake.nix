@@ -36,6 +36,7 @@
                 builtins.elem (nixpkgs.lib.getName pkg) [
                   "discord"
                   "obsidian"
+                  "packer"
                   "zoom"
                 ];
             };
