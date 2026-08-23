@@ -78,7 +78,7 @@ in
   ];
 
   systemd.tmpfiles.rules = [
-    "d /var/lib/ha-mcp 0700 root root -"
+    "d /var/lib/ha-mcp 0700 cvandesande cvandesande -"
   ];
 
   programs = {

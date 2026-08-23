@@ -62,7 +62,7 @@
       script = ''
         if ! git diff --quiet -- flake.lock; then
           git add flake.lock
-          git commit -m "flake.lock: automated update $(date -I)"
+          git -c commit.gpgsign=false commit -m "flake.lock: automated update $(date -I)"
         fi
       '';
     };

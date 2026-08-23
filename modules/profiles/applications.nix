@@ -59,6 +59,12 @@
     sessionVariables = {
       SSH_ASKPASS_REQUIRE = "force";
     };
+
+    # Google Chrome enterprise policy: disable AI Mode in the address bar / New Tab search box.
+    # https://chromeenterprise.google/policies/ai-mode-settings/
+    etc."opt/chrome/policies/managed/ai-mode.json".text = builtins.toJSON {
+      AIModeSettings = 1;
+    };
   };
 
   programs = {
