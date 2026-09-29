@@ -34,6 +34,7 @@ in
     # Unstable runtimes and editors
     pkgsUnstable.nodejs
     pkgsUnstable.zed-editor
+    pkgsUnstable.opencode
 
     # CLI utilities
     bubblewrap
