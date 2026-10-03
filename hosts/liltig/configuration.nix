@@ -92,6 +92,11 @@
     };
   };
 
+  # system.autoUpgrade switches live, and a docker.service restart takes the LLM
+  # container (and any in-flight generation) down with it. Keep the running
+  # daemon across switches; the new docker takes effect at the next reboot.
+  systemd.services.docker.restartIfChanged = false;
+
   environment.shellAliases = {
     llm-start  = "systemctl start docker-llama-server";
     llm-stop   = "systemctl stop docker-llama-server";
