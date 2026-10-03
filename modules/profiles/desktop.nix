@@ -123,12 +123,40 @@ in
     ];
   };
 
-  systemd.tmpfiles.rules = [
-    "d /var/lib/sddm/.config 0755 sddm sddm -"
-    "C+ /var/lib/sddm/.config/kcminputrc 0644 sddm sddm - /etc/sddm/kcminputrc"
-  ];
+  systemd = {
+    tmpfiles.rules = [
+      "d /var/lib/sddm/.config 0755 sddm sddm -"
+      "C+ /var/lib/sddm/.config/kcminputrc 0644 sddm sddm - /etc/sddm/kcminputrc"
+    ];
 
-  systemd.services.fwupd-refresh.serviceConfig.User = lib.mkForce "root";
+    services.fwupd-refresh.serviceConfig.User = lib.mkForce "root";
+
+    user = {
+      services.notify-reboot-required = {
+        description = "Notify when NixOS updates are installed";
+        serviceConfig = {
+          Type = "oneshot";
+          ExecStart = notifyRebootRequired;
+        };
+      };
+
+      paths.notify-reboot-required = {
+        description = "Watch for active NixOS generation changes";
+        wantedBy = [ "default.target" ];
+        pathConfig.PathChanged = "/run/current-system";
+      };
+
+      timers.notify-reboot-required = {
+        description = "Check whether the active NixOS generation needs a reboot";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnBootSec = "5min";
+          OnUnitActiveSec = "6h";
+          Persistent = true;
+        };
+      };
+    };
+  };
 
   hardware = {
     bluetooth = {
@@ -146,32 +174,6 @@ in
     sane = {
       enable = true;
       extraBackends = [ pkgs.epsonscan2 ];
-    };
-  };
-
-  systemd.user = {
-    services.notify-reboot-required = {
-      description = "Notify when NixOS updates are installed";
-      serviceConfig = {
-        Type = "oneshot";
-        ExecStart = notifyRebootRequired;
-      };
-    };
-
-    paths.notify-reboot-required = {
-      description = "Watch for active NixOS generation changes";
-      wantedBy = [ "default.target" ];
-      pathConfig.PathChanged = "/run/current-system";
-    };
-
-    timers.notify-reboot-required = {
-      description = "Check whether the active NixOS generation needs a reboot";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec = "5min";
-        OnUnitActiveSec = "6h";
-        Persistent = true;
-      };
     };
   };
 
