@@ -66,6 +66,8 @@ class Handler(BaseHTTPRequestHandler):
                 if len(buf) > MAX_BODY:
                     raise ValueError("body too large")
         length = int(self.headers.get("Content-Length") or 0)
+        if length < 0:
+            raise ValueError("negative Content-Length")
         if length > MAX_BODY:
             raise ValueError("body too large")
         return self.rfile.read(length) if length else b""

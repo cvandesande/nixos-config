@@ -247,6 +247,18 @@ class RouterTests(unittest.TestCase):
         sock.close()  # client vanishes mid-stream
         self.assertTrue(self.local.aborted.wait(10), "upstream stream was not aborted")
 
+    def test_negative_content_length_rejected(self):
+        for n in (-5, -1):  # -1 would block forever in rfile.read(-1) if unchecked
+            sock = socket.create_connection(("127.0.0.1", self.port), 5)
+            try:
+                sock.sendall(b"POST /v1/messages HTTP/1.1\r\nHost: x\r\n"
+                             b"Content-Length: %d\r\n\r\n" % n)
+                line = sock.recv(64).split(b"\r\n")[0]
+                # router speaks HTTP/1.0; assert only the status code
+                self.assertEqual(line.split(b" ")[1], b"400", (n, line))
+            finally:
+                sock.close()
+
     def test_upstream_down_gives_502(self):
         port = free_port()
         p2 = free_port()
