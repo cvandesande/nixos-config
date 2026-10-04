@@ -98,12 +98,21 @@
     # Weights (v2 checkpoint, n-gram table, MTP head, tokenizer) come from
     #   hf download peonist-ai/halogen-qwen3.8-flash-next --local-dir ~/models/halogen-qwen3.8-flash-next
     # HALOGEN_DOWNLOAD is unset, so the container makes no outbound connection
-    # and /models stays read-only. Shipped defaults on purpose: no tuning env.
+    # and /models stays read-only. Shipped defaults otherwise.
     containers.halogen = {
       image = "ghcr.io/peonist-ai/halogen-flash-server:0.16.2@sha256:0c61bf84ac22308a53f5d1ca6b86806702d7039e5ebc51cae4c66621b92fe04a";
       autoStart = false;
       ports = [ "127.0.0.1:8731:8731" ];
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
+      # Claude Code sends no sampling fields, and halogen decodes such requests
+      # greedy, which can loop inside the think block at long context. Default
+      # to the model card's thinking settings (the llama-server values above).
+      # A request that sends its own values still wins.
+      environment = {
+        HALOGEN_TEMPERATURE = "1.0";
+        HALOGEN_TOP_P = "0.95";
+        HALOGEN_TOP_K = "20";
+      };
       # ROCm needs /dev/kfd as well as /dev/dri (both mode 0666, so no
       # group-add). The GPU runtime dies at startup without --ipc=host.
       extraOptions = [
