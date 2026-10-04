@@ -91,17 +91,56 @@
       # needed by a ROCm image. Both nodes are mode 0666, so no group-add.
       extraOptions = [ "--device=/dev/dri" ];
     };
+
+    # Trial alternative to llama-server: halogen-flash-server, a closed-source
+    # ROCm engine built for gfx1151 only. It also speaks the Anthropic Messages
+    # API (/v1/messages), and claude-router sends local requests to it.
+    # Weights (v2 checkpoint, n-gram table, MTP head, tokenizer) come from
+    #   hf download peonist-ai/halogen-qwen3.8-flash-next --local-dir ~/models/halogen-qwen3.8-flash-next
+    # HALOGEN_DOWNLOAD is unset, so the container makes no outbound connection
+    # and /models stays read-only. Shipped defaults on purpose: no tuning env.
+    containers.halogen = {
+      image = "ghcr.io/peonist-ai/halogen-flash-server:0.16.2@sha256:0c61bf84ac22308a53f5d1ca6b86806702d7039e5ebc51cae4c66621b92fe04a";
+      autoStart = false;
+      ports = [ "127.0.0.1:8731:8731" ];
+      volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
+      # ROCm needs /dev/kfd as well as /dev/dri (both mode 0666, so no
+      # group-add). The GPU runtime dies at startup without --ipc=host.
+      extraOptions = [
+        "--device=/dev/kfd"
+        "--device=/dev/dri"
+        "--ipc=host"
+        "--ulimit=memlock=-1:-1"
+      ];
+    };
   };
 
-  # system.autoUpgrade switches live, and a docker.service restart takes the LLM
-  # container (and any in-flight generation) down with it. Keep the running
-  # daemon across switches; the new docker takes effect at the next reboot.
-  systemd.services.docker.restartIfChanged = false;
+  systemd.services = {
+    # halogen (~89 GiB) and llama-server (~100 GiB) do not fit together, and
+    # memory pressure wedges halogen rather than failing it. Starting either
+    # stops the other (Conflicts= is symmetric); the ordering makes the stop
+    # finish before the start.
+    docker-halogen = {
+      conflicts = [ "docker-llama-server.service" ];
+      after = [ "docker-llama-server.service" ];
+    };
 
+    # system.autoUpgrade switches live, and a docker.service restart takes the LLM
+    # container (and any in-flight generation) down with it. Keep the running
+    # daemon across switches; the new docker takes effect at the next reboot.
+    docker.restartIfChanged = false;
+  };
+
+  # llm-* follow the backend claude-router sends local requests to (halogen).
+  # llama-server stays available as the fallback; switching back also needs
+  # the router's --local port changed to 8080.
   environment.shellAliases = {
-    llm-start  = "systemctl start docker-llama-server";
-    llm-stop   = "systemctl stop docker-llama-server";
-    llm-status = "systemctl is-active docker-llama-server";
+    llm-start  = "systemctl start docker-halogen";
+    llm-stop   = "systemctl stop docker-halogen";
+    llm-status = "systemctl is-active docker-halogen";
+    llamacpp-start  = "systemctl start docker-llama-server";
+    llamacpp-stop   = "systemctl stop docker-llama-server";
+    llamacpp-status = "systemctl is-active docker-llama-server";
   };
 
   fileSystems."/home/cvandesande/mnt/whiterock" = {

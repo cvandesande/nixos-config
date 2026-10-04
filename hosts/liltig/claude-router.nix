@@ -1,9 +1,10 @@
 { pkgs, ... }:
 
 # Model router for Claude Code. Point ANTHROPIC_BASE_URL at it and requests
-# whose model name starts with "qwen" go to the local llama-server container
-# (see configuration.nix); everything else, including the subscription OAuth
-# traffic, passes through unchanged to api.anthropic.com. This lets Claude
+# whose model name starts with "qwen" go to the local halogen container on
+# :8731 (see configuration.nix; llama-server on :8080 is the fallback backend);
+# everything else, including the subscription OAuth traffic, passes through
+# unchanged to api.anthropic.com. This lets Claude
 # orchestrate while a subagent with `model: qwen3.8-flash-next-coding` runs
 # locally:
 #   ANTHROPIC_BASE_URL=http://127.0.0.1:8090 claude   # now the default (below)
@@ -18,7 +19,7 @@
   environment.sessionVariables.ANTHROPIC_BASE_URL = "http://127.0.0.1:8090";
 
   systemd.services.claude-router = {
-    description = "Claude Code model router (qwen* -> local llama-server, else Anthropic)";
+    description = "Claude Code model router (qwen* -> local halogen, else Anthropic)";
     wantedBy = [ "multi-user.target" ];
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
@@ -27,7 +28,7 @@
         "${pkgs.python3}/bin/python3"
         "${./claude-router/router.py}"
         "--listen 127.0.0.1:8090"
-        "--local http://127.0.0.1:8080"
+        "--local http://127.0.0.1:8731"
         "--default https://api.anthropic.com"
         "--local-prefix qwen"
       ];
