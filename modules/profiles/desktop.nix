@@ -140,6 +140,22 @@ in
         };
       };
 
+      # Pinned launchers stored as /nix/store/<hash>-system-path/... go stale
+      # after every rebuild and render as question marks. Rewrite them to
+      # stable applications: URIs before plasmashell reads the config.
+      services.fix-plasma-pins = {
+        description = "Rewrite nix-store launcher pins to applications: URIs";
+        wantedBy = [ "plasma-core.target" ];
+        before = [ "plasma-plasmashell.service" ];
+        serviceConfig.Type = "oneshot";
+        script = ''
+          f="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+          [ -f "$f" ] || exit 0
+          ${pkgs.gnused}/bin/sed -i -E \
+            's#file:///nix/store/[a-z0-9]+-system-path/share/applications/([^,]+\.desktop)#applications:\1#g' "$f"
+        '';
+      };
+
       paths.notify-reboot-required = {
         description = "Watch for active NixOS generation changes";
         wantedBy = [ "default.target" ];
