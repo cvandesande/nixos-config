@@ -38,34 +38,15 @@
     system.autoUpgrade = {
       enable = true;
       flake = "path:/home/cvandesande/nixos-config#${config.networking.hostName}";
-      flags = [
-        "--update-input"
-        "nixpkgs"
-        "--update-input"
-        "nixpkgs-unstable"
-      ];
       dates = "daily";
       randomizedDelaySec = "45min";
       allowReboot = false;
     };
 
-    systemd.services.nixos-upgrade.onSuccess = [ "flake-lock-commit.service" ];
-
-    systemd.services.flake-lock-commit = {
-      description = "Commit updated flake.lock after a successful nixos-upgrade";
-      path = [ pkgs.git ];
-      serviceConfig = {
-        Type = "oneshot";
-        User = "cvandesande";
-        WorkingDirectory = "/home/cvandesande/nixos-config";
-      };
-      script = ''
-        if ! git diff --quiet -- flake.lock; then
-          git add flake.lock
-          git -c commit.gpgsign=false commit -m "flake.lock: automated update $(date -I)"
-        fi
-      '';
-    };
+    # The flake is a path: input, so fast-forward it to origin before each
+    # upgrade. flake.lock is only bumped by hand (nix flake update, commit,
+    # push); a failed pull (offline, dirty or diverged tree) is not fatal.
+    systemd.services.nixos-upgrade.serviceConfig.ExecStartPre = "-${pkgs.util-linux}/bin/runuser -u cvandesande -- ${pkgs.git}/bin/git -C /home/cvandesande/nixos-config pull --ff-only";
 
     system.activationScripts.diffGens = ''
       (
