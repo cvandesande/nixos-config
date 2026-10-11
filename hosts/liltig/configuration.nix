@@ -100,7 +100,7 @@
     # HALOGEN_DOWNLOAD is unset, so the container makes no outbound connection
     # and /models stays read-only. Shipped defaults otherwise.
     containers.halogen = {
-      image = "ghcr.io/peonist-ai/halogen-flash-server:0.16.2@sha256:0c61bf84ac22308a53f5d1ca6b86806702d7039e5ebc51cae4c66621b92fe04a";
+      image = "ghcr.io/peonist-ai/halogen-flash-server:0.18.0@sha256:de3b47d2e5f24f98a38ba5fb66b0075b0cd8a3219c38917c78fb4bbeb42b88d9";
       autoStart = false;
       ports = [ "127.0.0.1:8731:8731" ];
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
