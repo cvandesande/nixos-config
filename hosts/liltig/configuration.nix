@@ -117,6 +117,9 @@
         # setting; claude-router passes the session headers through.
         HALOGEN_FORK = "1";
         HALOGEN_FORK_MAP = "claude-code";
+        # Keep resume points for a parent plus two children, so a subagent's
+        # save does not replace the parent's (about 0.8 GiB more host RAM).
+        HALOGEN_CACHE_BRANCHES = "3";
       };
       # ROCm needs /dev/kfd as well as /dev/dri (both mode 0666, so no
       # group-add). The GPU runtime dies at startup without --ipc=host.
