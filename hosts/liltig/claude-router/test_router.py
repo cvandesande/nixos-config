@@ -304,6 +304,46 @@ def llama_up():
         return False
 
 
+class HoistLogTests(unittest.TestCase):
+    """The router logs each system-message hoist, so it can be judged from the journal."""
+
+    def test_hoist_is_logged_only_when_it_happens(self):
+        import tempfile
+        local, default = Fake("local"), Fake("default")
+        port = free_port()
+        with tempfile.TemporaryFile() as log:
+            proc = subprocess.Popen(
+                [sys.executable, str(HERE / "router.py"),
+                 "--listen", f"127.0.0.1:{port}",
+                 "--local", f"http://127.0.0.1:{local.server_port}",
+                 "--default", f"http://127.0.0.1:{default.server_port}"],
+                stderr=log)
+            try:
+                for _ in range(50):
+                    try:
+                        socket.create_connection(("127.0.0.1", port), 0.2).close()
+                        break
+                    except OSError:
+                        time.sleep(0.1)
+                plain = {"model": "qwen-x", "messages": [{"role": "user", "content": "hi"}]}
+                hoist = {"model": "qwen-x", "messages": [
+                    {"role": "user", "content": "hi"},
+                    {"role": "system", "content": "S1"},
+                    {"role": "system", "content": "S2"}]}
+                anthropic = dict(hoist, model="claude-x")
+                for body in (plain, hoist, anthropic):
+                    c, r = request(port, "POST", "/v1/messages", body)
+                    r.read()
+                    c.close()
+            finally:
+                proc.terminate()
+                proc.wait()
+            log.seek(0)
+            lines = log.read().decode().splitlines()
+        hoisted = [l for l in lines if l.startswith("hoisted")]
+        self.assertEqual(hoisted, ["hoisted 2 system message(s) into `system`"], lines)
+
+
 @unittest.skipUnless(llama_up(), "llama-server not running on :8080")
 class RealLlamaTests(unittest.TestCase):
     """Real llama-server as 'local', fake Anthropic as default."""

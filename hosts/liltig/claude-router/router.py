@@ -92,15 +92,16 @@ class Handler(BaseHTTPRequestHandler):
         """Claude Code puts role="system" messages inside `messages`, which the
         Anthropic API accepts but many chat templates (Qwen's included) reject
         unless the system message comes first. Hoist them into the top-level
-        `system` field. Untouched when there is nothing to hoist."""
+        `system` field. Returns (body, number hoisted); the body is untouched
+        when there is nothing to hoist."""
         try:
             data = json.loads(body)
             msgs = data["messages"]
             hoisted = [m for m in msgs if isinstance(m, dict) and m.get("role") == "system"]
         except (ValueError, KeyError, TypeError):
-            return body
+            return body, 0
         if not hoisted:
-            return body
+            return body, 0
         blocks = []
         for m in hoisted:
             c = m.get("content")
@@ -113,7 +114,7 @@ class Handler(BaseHTTPRequestHandler):
             sysf = [{"type": "text", "text": sysf}]
         data["system"] = (sysf or []) + blocks
         data["messages"] = [m for m in msgs if m not in hoisted]
-        return json.dumps(data).encode()
+        return json.dumps(data).encode(), len(hoisted)
 
     # -- proxying ----------------------------------------------------------
     def proxy(self):
@@ -128,7 +129,9 @@ class Handler(BaseHTTPRequestHandler):
                          f"{'LOCAL' if is_local else 'DEFAULT'} {backend.url}\n")
 
         if is_local:
-            body = self.adapt_local(body)
+            body, hoisted = self.adapt_local(body)
+            if hoisted:
+                sys.stderr.write(f"hoisted {hoisted} system message(s) into `system`\n")
 
         headers = {}
         for k, v in self.headers.items():
