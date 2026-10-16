@@ -112,6 +112,11 @@
         HALOGEN_TEMPERATURE = "1.0";
         HALOGEN_TOP_P = "0.95";
         HALOGEN_TOP_K = "20";
+        # Keep each Claude Code thread's state (main conversation and every
+        # subagent) so its next request starts from it. Needs no client
+        # setting; claude-router passes the session headers through.
+        HALOGEN_FORK = "1";
+        HALOGEN_FORK_MAP = "claude-code";
       };
       # ROCm needs /dev/kfd as well as /dev/dri (both mode 0666, so no
       # group-add). The GPU runtime dies at startup without --ipc=host.
