@@ -120,6 +120,12 @@
         # Keep resume points for a parent plus two children, so a subagent's
         # save does not replace the parent's (about 0.8 GiB more host RAM).
         HALOGEN_CACHE_BRANCHES = "3";
+        # Store the attention cache in 8 bits and spend the saved memory on a
+        # larger pool: 925,184 positions fit where 524,288 did, so more
+        # 160k-token requests and kept states fit at once. Costs about 2%
+        # decode speed at 32k. Do not combine with HALOGEN_COMPOSABLE_CONTEXT.
+        HALOGEN_KV8 = "1";
+        HALOGEN_KV_POOL_POSITIONS = "925184";
       };
       # ROCm needs /dev/kfd as well as /dev/dri (both mode 0666, so no
       # group-add). The GPU runtime dies at startup without --ipc=host.
