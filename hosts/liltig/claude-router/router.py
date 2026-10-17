@@ -9,10 +9,13 @@ and compression pass through untouched. Standard library only.
 """
 import argparse
 import http.client
+import itertools
 import json
+import select
 import socket
 import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -23,6 +26,8 @@ HOP_BY_HOP = {
 }
 CHUNK = 16 * 1024
 MAX_BODY = 256 * 1024 * 1024
+# Per-request id for the outcome log; next() on itertools.count is atomic.
+REQ_IDS = itertools.count(1)
 
 
 class Backend:
@@ -123,12 +128,14 @@ class Handler(BaseHTTPRequestHandler):
         except (ValueError, OSError) as e:
             return self.fail(400, f"bad request body: {e}")
 
+        req_id = next(REQ_IDS)
+        t_start = time.monotonic()  # outcome timings start when the body is read
         backend, model = self.pick(body)
-        is_local = backend is self.server.cfg.local
+        kind = "LOCAL" if backend is self.server.cfg.local else "DEFAULT"
         sys.stderr.write(f"{self.command} {self.path} model={model!r} -> "
-                         f"{'LOCAL' if is_local else 'DEFAULT'} {backend.url}\n")
+                         f"{kind} {backend.url} id={req_id}\n")
 
-        if is_local:
+        if kind == "LOCAL":
             body, hoisted = self.adapt_local(body)
             if hoisted:
                 sys.stderr.write(f"hoisted {hoisted} system message(s) into `system`\n")
@@ -144,13 +151,59 @@ class Handler(BaseHTTPRequestHandler):
             headers["Content-Length"] = str(len(body))
 
         conn = backend.connect(self.server.cfg.timeout)
+        done = threading.Event()  # set by this thread when the request is over
+        gone = threading.Event()  # set by the watcher when the client hung up
+
+        def log_gone(stage):
+            sys.stderr.write(f"client gone {kind} id={req_id} after "
+                             f"{time.monotonic() - t_start:.1f}s ({stage}); upstream closed\n")
+
+        def watch_client():
+            # Claude Code hangs up without the router noticing while it is
+            # blocked in getresponse()/read1(). Poll the client socket and, on
+            # EOF or reset, shut down the upstream socket so the main thread
+            # wakes with an error and closes the upstream instead of letting
+            # the server keep generating for an abandoned request.
+            while not done.is_set():
+                try:
+                    readable = select.select([self.connection], [], [], 0.5)[0]
+                except OSError:
+                    return  # socket closed underneath us; request is over anyway
+                if not readable:
+                    continue
+                try:
+                    data = self.connection.recv(1, socket.MSG_PEEK)
+                except OSError:
+                    data = b""
+                if not data:
+                    if done.is_set():
+                        return  # request finished first; the client closing is normal
+                    gone.set()
+                    sock = conn.sock  # the main thread may close conn and clear it
+                    try:
+                        if sock is not None:
+                            sock.shutdown(socket.SHUT_RDWR)
+                    except OSError:
+                        pass
+                    return
+                # pipelined bytes the main thread has not read yet; don't spin
+                time.sleep(0.5)
+
         try:
             conn.request(self.command, backend.prefix + self.path, body or None, headers)
+            threading.Thread(target=watch_client, daemon=True).start()
             resp = conn.getresponse()
         except (OSError, http.client.HTTPException) as e:
+            done.set()
             conn.close()
+            if gone.is_set():
+                log_gone("waiting for upstream headers")
+                self.close_connection = True  # client is gone; no 502 to write
+                return
             return self.fail(502, f"upstream {backend.url} unreachable: {e}")
+        first_byte = time.monotonic() - t_start
 
+        sent = 0
         try:
             self.send_response_only(resp.status, resp.reason)
             for k, v in resp.getheaders():
@@ -168,11 +221,23 @@ class Handler(BaseHTTPRequestHandler):
                     break
                 self.wfile.write(chunk)
                 self.wfile.flush()
+                sent += len(chunk)
         except (BrokenPipeError, ConnectionResetError):
-            pass  # client went away; closing upstream below aborts generation
+            log_gone("streaming")  # client went away; closing upstream aborts generation
         except (OSError, http.client.HTTPException) as e:
-            sys.stderr.write(f"stream error from {backend.url}: {e}\n")
+            if gone.is_set():
+                log_gone("streaming")  # watcher closed the upstream socket; client is gone
+            else:
+                sys.stderr.write(f"stream error from {backend.url}: {e}\n")
+        else:
+            if gone.is_set():
+                log_gone("streaming")  # read1 hit EOF caused by the watcher's shutdown
+            else:
+                sys.stderr.write(f"done {kind} id={req_id} status={resp.status} "
+                                 f"{time.monotonic() - t_start:.1f}s "
+                                 f"first-byte={first_byte:.1f}s sent={sent}B\n")
         finally:
+            done.set()  # stops the watcher; nothing to join, it is a daemon thread
             conn.close()
             self.close_connection = True
 

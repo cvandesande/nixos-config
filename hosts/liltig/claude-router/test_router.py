@@ -4,6 +4,8 @@ llama-server on :8080 when it is up (skipped otherwise)."""
 import gzip
 import http.client
 import json
+import re
+import select
 import socket
 import subprocess
 import sys
@@ -46,6 +48,20 @@ class FakeHandler(BaseHTTPRequestHandler):
         n = int(self.headers.get("Content-Length") or 0)
         body = self.rfile.read(n)
         self.server.seen.append((self.command, self.path, dict(self.headers), body))
+        if self.path.endswith("/hang"):
+            # Never respond: watch for the router to hang up on us (it does
+            # when its client disconnects), so the test can observe the abort.
+            deadline = time.monotonic() + 20
+            while time.monotonic() < deadline:
+                if select.select([self.connection], [], [], 0.2)[0]:
+                    try:
+                        eof = self.connection.recv(1, socket.MSG_PEEK) == b""
+                    except OSError:
+                        eof = True
+                    if eof:
+                        self.server.aborted.set()
+                        return
+            return
         if self.path.endswith("/stream"):
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream")
@@ -247,6 +263,19 @@ class RouterTests(unittest.TestCase):
         sock.close()  # client vanishes mid-stream
         self.assertTrue(self.local.aborted.wait(10), "upstream stream was not aborted")
 
+    def test_client_disconnect_while_waiting_aborts_upstream(self):
+        # Upstream has sent nothing yet: the router sits in getresponse() and
+        # must notice the hangup and close the upstream connection at once.
+        sock = socket.create_connection(("127.0.0.1", self.port))
+        body = json.dumps({"model": "qwen-x"}).encode()
+        sock.sendall(b"POST /hang HTTP/1.1\r\nHost: x\r\nContent-Length: %d\r\n\r\n%s"
+                     % (len(body), body))
+        t0 = time.monotonic()
+        while not self.local.seen and time.monotonic() - t0 < 5:
+            time.sleep(0.05)
+        sock.close()  # client vanishes while the upstream is still silent
+        self.assertTrue(self.local.aborted.wait(5), "upstream was not aborted")
+
     def test_negative_content_length_rejected(self):
         for n in (-5, -1):  # -1 would block forever in rfile.read(-1) if unchecked
             sock = socket.create_connection(("127.0.0.1", self.port), 5)
@@ -342,6 +371,100 @@ class HoistLogTests(unittest.TestCase):
             lines = log.read().decode().splitlines()
         hoisted = [l for l in lines if l.startswith("hoisted")]
         self.assertEqual(hoisted, ["hoisted 2 system message(s) into `system`"], lines)
+
+
+class WatcherQuietTests(unittest.TestCase):
+    """A client that closes right after a normal response must not make the
+    hangup watcher raise (conn.sock is cleared when the request finishes)."""
+
+    def test_no_traceback_after_normal_requests(self):
+        import tempfile
+        local = Fake("local")
+        port = free_port()
+        with tempfile.TemporaryFile() as log:
+            proc = subprocess.Popen(
+                [sys.executable, str(HERE / "router.py"),
+                 "--listen", f"127.0.0.1:{port}",
+                 "--local", f"http://127.0.0.1:{local.server_port}",
+                 "--default", f"http://127.0.0.1:{local.server_port}"],
+                stderr=log)
+            try:
+                for _ in range(50):
+                    try:
+                        socket.create_connection(("127.0.0.1", port), 0.2).close()
+                        break
+                    except OSError:
+                        time.sleep(0.1)
+                for _ in range(30):
+                    c, r = request(port, "POST", "/v1/messages", {"model": "qwen-x"})
+                    r.read()
+                    c.close()
+                time.sleep(1.5)  # let every watcher wake up and exit
+            finally:
+                proc.terminate()
+                proc.wait()
+            log.seek(0)
+            out = log.read().decode()
+        self.assertNotIn("Traceback", out)
+        self.assertEqual(out.count("\ndone LOCAL") + out.startswith("done LOCAL"), 30, out)
+
+
+class OutcomeLogTests(unittest.TestCase):
+    """The router logs one outcome line per proxied request: done, or client gone."""
+
+    def test_done_line_and_client_gone_line(self):
+        import tempfile
+        local, default = Fake("local"), Fake("default")
+        port = free_port()
+        with tempfile.TemporaryFile() as log:
+            proc = subprocess.Popen(
+                [sys.executable, str(HERE / "router.py"),
+                 "--listen", f"127.0.0.1:{port}",
+                 "--local", f"http://127.0.0.1:{local.server_port}",
+                 "--default", f"http://127.0.0.1:{default.server_port}"],
+                stderr=log)
+            try:
+                for _ in range(50):
+                    try:
+                        socket.create_connection(("127.0.0.1", port), 0.2).close()
+                        break
+                    except OSError:
+                        time.sleep(0.1)
+                c, r = request(port, "POST", "/v1/messages", {"model": "qwen-x"})
+                r.read()
+                c.close()
+                sock = socket.create_connection(("127.0.0.1", port))
+                body = json.dumps({"model": "qwen-x"}).encode()
+                sock.sendall(b"POST /hang HTTP/1.1\r\nHost: x\r\nContent-Length: %d\r\n\r\n%s"
+                             % (len(body), body))
+                t0 = time.monotonic()
+                while not local.seen and time.monotonic() - t0 < 5:
+                    time.sleep(0.05)
+                sock.close()  # client vanishes while the upstream is still silent
+                gone = re.compile(r"^client gone LOCAL")
+                t0 = time.monotonic()
+                while time.monotonic() - t0 < 5:
+                    log.seek(0)
+                    lines = log.read().decode().splitlines()
+                    if any(gone.match(l) for l in lines):
+                        break
+                    time.sleep(0.05)
+            finally:
+                proc.terminate()
+                proc.wait()
+            log.seek(0)
+            lines = log.read().decode().splitlines()
+        gone = [l for l in lines if l.startswith("client gone")]
+        self.assertEqual(len(gone), 1, lines)
+        self.assertRegex(
+            gone[0], r"^client gone LOCAL id=\d+ after \d+\.\d+s "
+                     r"\(waiting for upstream headers\); upstream closed$")
+        # no done line for the hung-up request: exactly one, for the normal one
+        done = [l for l in lines if l.startswith("done ")]
+        self.assertEqual(len(done), 1, lines)
+        self.assertRegex(
+            done[0], r"^done LOCAL id=\d+ status=200 \d+\.\d+s "
+                     r"first-byte=\d+\.\d+s sent=\d+B$")
 
 
 @unittest.skipUnless(llama_up(), "llama-server not running on :8080")
