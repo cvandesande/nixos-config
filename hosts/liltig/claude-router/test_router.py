@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Tests for router.py, run against fake upstreams."""
+"""Tests for router.py: fake upstreams for deterministic cases, plus the real
+halogen on :8731 when it is up (skipped otherwise)."""
 import gzip
 import http.client
 import json
@@ -456,6 +457,114 @@ class OutcomeLogTests(unittest.TestCase):
         self.assertRegex(
             done[0], r"^done LOCAL id=\d+ status=200 \d+\.\d+s "
                      r"first-byte=\d+\.\d+s sent=\d+B$")
+
+
+HALOGEN_PORT = 8731
+
+
+def halogen_up():
+    """True only if halogen's /health answers. A bare port check would also
+    accept any other service on the port."""
+    try:
+        c = http.client.HTTPConnection("127.0.0.1", HALOGEN_PORT, timeout=2)
+        c.request("GET", "/health")
+        r = c.getresponse()
+        d = json.loads(r.read())
+        return (r.status == 200 and d.get("status") == "ok"
+                and "/v1/messages" in d.get("endpoints", []))
+    except (OSError, ValueError, http.client.HTTPException):
+        return False
+
+
+@unittest.skipUnless(halogen_up(), f"halogen not running on :{HALOGEN_PORT}")
+class RealHalogenTests(unittest.TestCase):
+    """Real halogen as 'local', fake Anthropic as default."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.default = Fake("default")
+        cls.port = free_port()
+        cls.proc = subprocess.Popen(
+            [sys.executable, str(HERE / "router.py"),
+             "--listen", f"127.0.0.1:{cls.port}",
+             "--local", f"http://127.0.0.1:{HALOGEN_PORT}",
+             "--default", f"http://127.0.0.1:{cls.default.server_port}"],
+            stderr=subprocess.DEVNULL)
+        for _ in range(50):
+            try:
+                socket.create_connection(("127.0.0.1", cls.port), 0.2).close()
+                break
+            except OSError:
+                time.sleep(0.1)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.proc.terminate()
+        cls.proc.wait()
+
+    H = {"content-type": "application/json", "anthropic-version": "2023-06-01",
+         "x-api-key": "dummy"}
+
+    def test_nonstreaming(self):
+        c, r = request(self.port, "POST", "/v1/messages",
+                       {"model": "qwen3.8-flash-next-coding", "max_tokens": 200,
+                        "messages": [{"role": "user", "content": "Say hi"}]}, self.H)
+        d = json.loads(r.read())
+        self.assertEqual(r.status, 200)
+        self.assertEqual(d["type"], "message")
+        self.assertTrue(any(b["type"] == "text" for b in d["content"]))
+
+    def test_streaming_sse(self):
+        c, r = request(self.port, "POST", "/v1/messages",
+                       {"model": "qwen3.8-flash-next-coding", "max_tokens": 200,
+                        "stream": True,
+                        "messages": [{"role": "user", "content": "Count to five"}]},
+                       self.H)
+        self.assertEqual(r.status, 200)
+        self.assertIn("text/event-stream", r.getheader("Content-Type"))
+        body = r.read().decode()
+        self.assertIn("event: message_start", body)
+        self.assertIn("event: message_stop", body)
+
+    def test_tool_call(self):
+        tools = [{"name": "get_weather", "description": "Get weather for a city",
+                  "input_schema": {"type": "object",
+                                   "properties": {"city": {"type": "string"}},
+                                   "required": ["city"]}}]
+        c, r = request(self.port, "POST", "/v1/messages",
+                       {"model": "qwen3.8-flash-next-coding", "max_tokens": 1000,
+                        "tools": tools, "tool_choice": {"type": "any"},
+                        "messages": [{"role": "user",
+                                      "content": "What's the weather in Paris?"}]},
+                       self.H)
+        d = json.loads(r.read())
+        self.assertEqual(d["stop_reason"], "tool_use", d)
+        tu = [b for b in d["content"] if b["type"] == "tool_use"][0]
+        self.assertEqual(tu["name"], "get_weather")
+
+    def test_count_tokens(self):
+        c, r = request(self.port, "POST", "/v1/messages/count_tokens",
+                       {"model": "qwen3.8-flash-next-coding",
+                        "messages": [{"role": "user", "content": "hello"}]}, self.H)
+        self.assertGreater(json.loads(r.read())["input_tokens"], 0)
+
+    def test_claude_code_style_midconversation_system(self):
+        c, r = request(self.port, "POST", "/v1/messages",
+                       {"model": "qwen3.8-flash-next-coding", "max_tokens": 100,
+                        "system": [{"type": "text", "text": "You are terse."}],
+                        "messages": [{"role": "user", "content": "Say pong"},
+                                     {"role": "system", "content": [
+                                         {"type": "text", "text": "Env: linux"}]}]},
+                       self.H)
+        d = json.loads(r.read())
+        self.assertEqual(r.status, 200, d)
+        self.assertEqual(d["type"], "message")
+
+    def test_claude_model_not_sent_to_halogen(self):
+        c, r = request(self.port, "POST", "/v1/messages",
+                       {"model": "claude-haiku-4-5-20251001", "max_tokens": 5,
+                        "messages": [{"role": "user", "content": "x"}]}, self.H)
+        self.assertEqual(json.loads(r.read())["from"], "default")
 
 
 if __name__ == "__main__":
