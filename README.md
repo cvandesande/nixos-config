@@ -486,11 +486,18 @@ HOST=$(hostname)
 nix flake update
 ```
 
-Then rebuild with the normal flow:
+Then rebuild with the normal flow, previewing the upgrade before activating it:
 
 ```bash
 nix flake check --no-build
+
+# Remove any old ./result so a failed build can't leave a stale one to diff.
+rm -f result
 nixos-rebuild build --flake ".#$HOST"
+
+# Preview what will change (versions added, removed, upgraded).
+nvd diff /run/current-system ./result
+
 sudo nixos-rebuild test --flake ".#$HOST"
 sudo nixos-rebuild switch --flake ".#$HOST"
 ```
