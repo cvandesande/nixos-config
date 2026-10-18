@@ -2,9 +2,8 @@
 
 # Model router for Claude Code. Point ANTHROPIC_BASE_URL at it and requests
 # whose model name starts with "qwen" go to the local halogen container on
-# :8731 (see configuration.nix; llama-server on :8080 is the fallback backend);
-# everything else, including the subscription OAuth traffic, passes through
-# unchanged to api.anthropic.com. This lets Claude
+# :8731 (see configuration.nix); everything else, including the subscription
+# OAuth traffic, passes through unchanged to api.anthropic.com. This lets Claude
 # orchestrate while a subagent with `model: qwen3.8-flash-next-coding` runs
 # locally:
 #   ANTHROPIC_BASE_URL=http://127.0.0.1:8090 claude   # now the default (below)
