@@ -25,12 +25,6 @@
   # No local ZFS pools (LUKS+btrfs storage), opt out of global workstation ZFS.
   workstation.zfs.enable = false;
 
-  # Strix Halo Vulkan/RADV: 110 GiB GTT aperture and no unified-memory IOMMU overhead.
-  boot.kernelParams = [
-    "ttm.pages_limit=28835840"
-    "ttm.page_pool_size=28835840"
-  ];
-
   # Prioritize inference throughput and disable higher-latency CPU idle states.
   # ppdSupport = false is load-bearing: with it true, tuned's power-profiles
   # compatibility layer applies its own profile and overrides recommend.
