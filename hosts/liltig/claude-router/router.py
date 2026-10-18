@@ -2,7 +2,7 @@
 """Model-name router for Claude Code.
 
 Point ANTHROPIC_BASE_URL at this proxy. Requests whose JSON body has a "model"
-starting with one of the --local-prefix values go to the local llama-server;
+starting with one of the --local-prefix values go to the local backend;
 everything else (including unparsable bodies and body-less requests) goes to
 Anthropic. Bodies and responses are forwarded as raw bytes, so SSE streaming
 and compression pass through untouched. Standard library only.
@@ -266,7 +266,7 @@ class Server(ThreadingHTTPServer):
 def main():
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--listen", default="127.0.0.1:8090")
-    p.add_argument("--local", default="http://127.0.0.1:8080")
+    p.add_argument("--local", default="http://127.0.0.1:8731")
     p.add_argument("--default", default="https://api.anthropic.com")
     p.add_argument("--local-prefix", action="append", default=None,
                    help="model-name prefix routed to --local (repeatable; default: qwen)")
