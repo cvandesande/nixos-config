@@ -129,6 +129,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1787736819,
+        "narHash": "sha256-cV5xEJJK3BvhU8rEd4mC9UsmDi5qscv/kzGPhBRC5WA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "9fbb54b33e91ee4ca368e35a78e0613c720600b3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "pre-commit": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -157,7 +173,8 @@
         "disko": "disko",
         "lanzaboote": "lanzaboote",
         "nixpkgs": "nixpkgs",
-        "nixpkgs-unstable": "nixpkgs-unstable"
+        "nixpkgs-unstable": "nixpkgs-unstable",
+        "spotifast": "spotifast"
       }
     },
     "rust-overlay": {
@@ -178,6 +195,47 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "rust-overlay_2": {
+      "inputs": {
+        "nixpkgs": [
+          "spotifast",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787834454,
+        "narHash": "sha256-jXSvqn04IOecJCvSvl8+g3PsbDVNP6qKs6dKUs/b16k=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "dc2fd1acc537f3583744e1373597a5731ff7a6e3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "spotifast": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2",
+        "rust-overlay": "rust-overlay_2"
+      },
+      "locked": {
+        "lastModified": 1792092692,
+        "narHash": "sha256-tYncFZI6m7W+ACj9wizmQUrFktDI3SR9dSQ0uS7iIg0=",
+        "owner": "crmne",
+        "repo": "spotifast",
+        "rev": "a4c1b3ef6c9667507f198312453766f6ba953710",
+        "type": "github"
+      },
+      "original": {
+        "owner": "crmne",
+        "ref": "v0.13.3",
+        "repo": "spotifast",
         "type": "github"
       }
     }

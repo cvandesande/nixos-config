@@ -2,6 +2,7 @@
   lib,
   pkgs,
   pkgsUnstable,
+  inputs,
   ...
 }:
 
@@ -26,6 +27,7 @@
       pkgsUnstable.obsidian
       onlyoffice-desktopeditors
       signal-desktop
+      inputs.spotifast.packages.${pkgs.stdenv.hostPlatform.system}.default
 
       # Hardware tools
       amdgpu_top
