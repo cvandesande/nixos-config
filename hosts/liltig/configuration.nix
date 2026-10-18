@@ -56,7 +56,7 @@
   virtualisation.oci-containers = {
     backend = "docker";
     containers.halogen = {
-      image = "ghcr.io/peonist-ai/halogen-flash-server:0.18.9@sha256:6e1e155f254f3eddab69096eb343eda75739ae865e886e7ae03fff871587da48";
+      image = "ghcr.io/peonist-ai/halogen-flash-server:0.18.10@sha256:49879b9ea4ff6831b2c7674e6b69f209630a1af353e1de2b3aa630c2ade977ad";
       autoStart = false;
       ports = [ "127.0.0.1:8731:8731" ];
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
