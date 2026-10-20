@@ -1,4 +1,9 @@
-{ pkgs, pkgsUnstable, ... }:
+{
+  inputs,
+  pkgs,
+  pkgsUnstable,
+  ...
+}:
 
 let
   ha-mcp = pkgs.writeShellApplication {
@@ -34,7 +39,7 @@ in
     # Unstable runtimes and editors
     pkgsUnstable.nodejs
     pkgsUnstable.zed-editor
-    pkgsUnstable.opencode
+    inputs.opencode.packages.${pkgs.stdenv.hostPlatform.system}.default
 
     # CLI utilities
     bubblewrap

@@ -7,6 +7,8 @@
 
     spotifast.url = "github:crmne/spotifast/v0.13.3";
 
+    opencode.url = "github:anomalyco/opencode/v2.1.1";
+
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,6 +41,7 @@
                   "discord"
                   "obsidian"
                   "packer"
+                  "rtk"
                   "zoom"
                 ];
             };

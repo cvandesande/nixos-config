@@ -20,6 +20,13 @@
   time.timeZone = "Europe/Dublin";
   system.stateVersion = "26.05";
 
+  # Key-only SSH. KbdInteractiveAuthentication has to go too: with UsePAM it
+  # accepts the account password and would bypass PasswordAuthentication.
+  services.openssh.settings = {
+    PasswordAuthentication = false;
+    KbdInteractiveAuthentication = false;
+  };
+
   hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # No local ZFS pools (LUKS+btrfs storage), opt out of global workstation ZFS.
@@ -50,7 +57,7 @@
   virtualisation.oci-containers = {
     backend = "docker";
     containers.halogen = {
-      image = "ghcr.io/peonist-ai/halogen-flash-server:0.18.10@sha256:49879b9ea4ff6831b2c7674e6b69f209630a1af353e1de2b3aa630c2ade977ad";
+      image = "ghcr.io/peonist-ai/halogen-flash-server:0.18.12@sha256:b6403f1d07e22b719fb23d131d16d1ea27650da414dfaff734cfdd4fe18b9ba2";
       autoStart = false;
       ports = [ "127.0.0.1:8731:8731" ];
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
