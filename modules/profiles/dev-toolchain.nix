@@ -39,7 +39,7 @@ in
     # Unstable runtimes and editors
     pkgsUnstable.nodejs
     pkgsUnstable.zed-editor
-    inputs.opencode.packages.${pkgs.stdenv.hostPlatform.system}.default
+    inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi
 
     # CLI utilities
     bubblewrap
