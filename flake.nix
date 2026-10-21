@@ -7,7 +7,7 @@
 
     spotifast.url = "github:crmne/spotifast/v0.13.3";
 
-    pi.url = "github:earendil-works/pi/v1.3.0";
+    pi.url = "github:earendil-works/pi/stable";
 
     disko = {
       url = "github:nix-community/disko";

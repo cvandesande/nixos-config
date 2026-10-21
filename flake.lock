@@ -145,7 +145,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_3": {
+    "nixpkgs_2": {
       "locked": {
         "lastModified": 1788316716,
         "narHash": "sha256-bc7rSpXIdn9QWGNqfWcPZWOhEVF8NoeAZkWq0XWnf/k=",
@@ -161,7 +161,7 @@
         "type": "github"
       }
     },
-    "nixpkgs_4": {
+    "nixpkgs_3": {
       "locked": {
         "lastModified": 1787736819,
         "narHash": "sha256-cV5xEJJK3BvhU8rEd4mC9UsmDi5qscv/kzGPhBRC5WA=",
@@ -179,20 +179,20 @@
     },
     "pi": {
       "inputs": {
-        "nixpkgs": "nixpkgs_3",
+        "nixpkgs": "nixpkgs_2",
         "nixpkgs-darwin-x64": "nixpkgs-darwin-x64"
       },
       "locked": {
-        "lastModified": 1792090647,
-        "narHash": "sha256-AsutbwnjiwwLkB5tqLW+1GdGZyLmXsU0W+SNdNhJu7U=",
+        "lastModified": 1792621753,
+        "narHash": "sha256-N9NOpiiZTbOMDMV+CxvJAgtLjJJ1/8NJBGS0cFHkhsc=",
         "owner": "earendil-works",
         "repo": "pi",
-        "rev": "71023aec1546d6d677a65669c5665c0927ce0dd0",
+        "rev": "4a080252f06caf63a525d7873c5d94d3c23887e0",
         "type": "github"
       },
       "original": {
         "owner": "earendil-works",
-        "ref": "v1.3.0",
+        "ref": "stable",
         "repo": "pi",
         "type": "github"
       }
@@ -274,7 +274,7 @@
     },
     "spotifast": {
       "inputs": {
-        "nixpkgs": "nixpkgs_4",
+        "nixpkgs": "nixpkgs_3",
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
