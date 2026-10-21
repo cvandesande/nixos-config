@@ -57,7 +57,7 @@
   virtualisation.oci-containers = {
     backend = "docker";
     containers.halogen = {
-      image = "ghcr.io/peonist-ai/halogen-flash-server:0.18.12@sha256:b6403f1d07e22b719fb23d131d16d1ea27650da414dfaff734cfdd4fe18b9ba2";
+      image = "ghcr.io/peonist-ai/halogen-flash-server:0.18.13@sha256:2e98dc53ed4a43b5600b11a80852eedfa573f4ffc3f10c64da01245f2a3217fc";
       autoStart = false;
       ports = [ "127.0.0.1:8731:8731" ];
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
@@ -102,8 +102,8 @@
 
   # llm-* control the backend claude-router sends local requests to (halogen).
   environment.shellAliases = {
-    llm-start  = "systemctl start docker-halogen";
-    llm-stop   = "systemctl stop docker-halogen";
+    llm-start = "systemctl start docker-halogen";
+    llm-stop = "systemctl stop docker-halogen";
     llm-status = "systemctl is-active docker-halogen";
   };
 
