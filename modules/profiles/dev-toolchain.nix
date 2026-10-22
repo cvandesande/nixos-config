@@ -5,25 +5,6 @@
   ...
 }:
 
-let
-  ha-mcp = pkgs.writeShellApplication {
-    name = "ha-mcp";
-    runtimeInputs = [
-      pkgs.python313
-      pkgs.uv
-    ];
-    text = ''
-      if [[ -f /var/lib/ha-mcp/env ]]; then
-        set -a
-        # shellcheck disable=SC1091
-        source /var/lib/ha-mcp/env
-        set +a
-      fi
-
-      exec uvx --python ${pkgs.python313}/bin/python3.13 ha-mcp@latest "$@"
-    '';
-  };
-in
 {
   environment.systemPackages = with pkgs; [
     # Unstable infrastructure tools
@@ -60,9 +41,6 @@ in
     wget
     yq
 
-    # Local tools
-    ha-mcp
-
     # Nix tools
     deadnix
     nil
@@ -81,10 +59,6 @@ in
     ruff
     uv
 
-  ];
-
-  systemd.tmpfiles.rules = [
-    "d /var/lib/ha-mcp 0700 cvandesande cvandesande -"
   ];
 
   programs = {
