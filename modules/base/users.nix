@@ -6,14 +6,13 @@
     isNormalUser = true;
     description = "Chris";
     extraGroups = [
-      # USB serial adapters, for tio and friends.
       "dialout"
       "plugdev"
       "wheel"
     ];
   };
 
-  # Allow non-root NFS mount/unmount for fstab entries marked "users".
+  # mount.nfs4 isn't setuid by default, so fstab entries marked "users" fail.
   security.wrappers."mount.nfs4" = {
     source = "${pkgs.nfs-utils}/bin/mount.nfs4";
     owner = "root";

@@ -43,9 +43,7 @@
       allowReboot = false;
     };
 
-    # The flake is a path: input, so fast-forward it to origin before each
-    # upgrade. flake.lock is only bumped by hand (nix flake update, commit,
-    # push); a failed pull (offline, dirty or diverged tree) is not fatal.
+    # The flake is a path: input, so fast-forward it first; a failed pull is not fatal.
     systemd.services.nixos-upgrade.serviceConfig.ExecStartPre = "-${pkgs.util-linux}/bin/runuser -u cvandesande -- ${pkgs.git}/bin/git -C /home/cvandesande/nixos-config pull --ff-only";
 
     system.activationScripts.diffGens = ''

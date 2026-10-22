@@ -11,8 +11,6 @@
     trusted-users = [ "root" ];
   };
 
-  # system.autoUpgrade runs daily, so collect the superseded closures on a
-  # schedule rather than relying on a manual nix-collect-garbage.
   nix.gc = {
     automatic = true;
     dates = "weekly";

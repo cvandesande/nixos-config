@@ -38,12 +38,10 @@
     ];
     extraModulePackages = [ ];
 
-    # Removes error from unused hardware on NUC
+    # Unused here, and it logs a probe error at boot.
     blacklistedKernelModules = [ "spi_nor" ];
 
-    # Work around this NUC firmware exposing the TPM2 CRB command buffer in a
-    # region Linux otherwise treats as busy:
-    # tpm_crb MSFT0101:00: error -EBUSY ... [mem 0xa2fff000-0xa2fff02f]
+    # Firmware reports the TPM2 CRB window busy (tpm_crb MSFT0101:00: error -EBUSY).
     kernelParams = [
       "acpi_enforce_resources=lax"
       "memmap=0x1000%0xa2fff000+2"
@@ -65,7 +63,6 @@
 
   services.thermald.enable = true;
 
-  # No local ZFS pools (LUKS+btrfs storage), opt out of global workstation ZFS.
   workstation.zfs.enable = false;
 
   fileSystems."/home/cvandesande/mnt/whiterock" = {

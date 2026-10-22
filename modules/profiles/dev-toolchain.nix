@@ -92,7 +92,7 @@ in
       enable = true;
       nix-direnv.enable = true;
     };
-    # System-level git identity for unattended flake.lock commits (per-user ~/.gitconfig overrides).
+    # Identity for unattended flake.lock commits; per-user ~/.gitconfig still wins.
     git = {
       enable = true;
       config.user = {

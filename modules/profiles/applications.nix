@@ -62,8 +62,7 @@
       SSH_ASKPASS_REQUIRE = "force";
     };
 
-    # Google Chrome enterprise policy: disable AI Mode in the address bar / New Tab search box.
-    # https://chromeenterprise.google/policies/ai-mode-settings/
+    # Chrome policy: disable AI Mode (https://chromeenterprise.google/policies/ai-mode-settings/).
     etc."opt/chrome/policies/managed/ai-mode.json".text = builtins.toJSON {
       AIModeSettings = 1;
     };
@@ -80,7 +79,7 @@
       package = pkgsUnstable.zoom-us;
     };
 
-    # Enable generic/static compiled binaries to run
+    # Lets unpackaged static binaries find their interpreter.
     nix-ld = {
       enable = true;
       libraries = with pkgs; [
@@ -101,7 +100,6 @@
       }
     ];
 
-    # FIDO2 Key support
     ssh = {
       startAgent = lib.mkDefault true;
       enableAskPassword = true;
@@ -116,7 +114,7 @@
 
   };
 
-  # Add FIDO2 key to ssh-agent at login so touch prompts reach ksshaskpass (no touch/PIN needed to add).
+  # Register the FIDO2 key at login so touch prompts reach ksshaskpass.
   systemd.user.services.ssh-add-fido2 = {
     description = "Add FIDO2 SSH key to agent";
     after = [ "ssh-agent.service" ];

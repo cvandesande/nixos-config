@@ -116,7 +116,7 @@ in
     };
     desktopManager.plasma6.enable = true;
 
-    # YubiKey/FIDO2 support
+    # udev rules for the YubiKey
     udev.packages = [
       pkgs.libfido2
       pkgs.yubikey-personalization
@@ -140,9 +140,8 @@ in
         };
       };
 
-      # Pinned launchers stored as /nix/store/<hash>-system-path/... go stale
-      # after every rebuild and render as question marks. Rewrite them to
-      # stable applications: URIs before plasmashell reads the config.
+      # Store paths in pinned launcher entries go stale on every rebuild and
+      # render as question marks; rewrite them to applications: URIs first.
       services.fix-plasma-pins = {
         description = "Rewrite nix-store launcher pins to applications: URIs";
         wantedBy = [ "plasma-core.target" ];
@@ -194,8 +193,7 @@ in
   };
 
   system.userActivationScripts.notify-reboot-required = ''
-    # --no-block: notify-send can stall ~25s per D-Bus call when the
-    # notification daemon isn't up yet, which would block activation.
+    # --no-block: notify-send can stall ~25s per call before the notification daemon is up.
     ${pkgs.systemd}/bin/systemctl --user --no-block start notify-reboot-required.service || true
   '';
 }
