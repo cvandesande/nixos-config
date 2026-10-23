@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   inputs,
   ...
 }:
@@ -27,6 +28,9 @@
   };
 
   boot.kernelModules = [ "kvm-intel" ];
+
+  # Speaker correction: see README section 10.
+  environment.systemPackages = [ pkgs.easyeffects ];
 
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 

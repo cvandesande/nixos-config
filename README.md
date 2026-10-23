@@ -453,6 +453,35 @@ they only accept tokens listed in `~/.ssh/authorized_keys`. Authorize at least
 two tokens before switching a host to key-only logins, so losing one does not
 lock you out of SSH.
 
+## 10. Laptop only: speaker tuning
+
+`nomad` only. The Framework 13 Pro speakers ship with a Dolby Atmos tuning on
+Windows. On Linux, [speaker-tuning-to-easyeffects](https://github.com/antoinecellerier/speaker-tuning-to-easyeffects)
+converts that tuning into an EasyEffects 8.x preset. It gives the speaker
+correction (FIR, EQ, compressor, limiter), not Atmos spatial processing. The
+host config only installs `easyeffects`; the preset lives in `~/.config` and is
+generated once per user.
+
+Download Framework's Windows driver bundle for the Core Ultra Series 3 (an
+`.exe` that 7-Zip can unpack, about 1.7 GB) from
+<https://resources.frame.work/downloads/laptop-13-pro/intel-core-ultra-3/> and
+check its SHA256 against the one on that page. Then, as your normal user (the
+script refuses `sudo`):
+
+```bash
+git clone https://github.com/antoinecellerier/speaker-tuning-to-easyeffects
+cd speaker-tuning-to-easyeffects
+nix-shell -p p7zip "python3.withPackages (p: [ p.numpy p.scipy p.rich p.rich-argparse ])"
+python3 dolby_to_easyeffects.py --doctor
+python3 dolby_to_easyeffects.py --autoload ~/Downloads/Framework_Laptop_13_Intel_Core_Ultra_Series3_driver_bundle_W11_v101_2026_06_05.exe
+```
+
+Start EasyEffects once so it keeps running in the background. If the sound is
+quieter than expected, re-run with `--enable autogain`; if it is harsh, disable
+filters (see the project's `docs/troubleshooting.md`). `--uninstall` removes
+what the script installed. The effect can also apply to HDMI, Bluetooth and
+headsets until you change the EasyEffects output setup.
+
 ## Daily rebuild flow
 
 For normal config changes on an already-installed system, use this flow:
