@@ -113,19 +113,4 @@
     };
 
   };
-
-  # Register the FIDO2 key at login so touch prompts reach ksshaskpass.
-  systemd.user.services.ssh-add-fido2 = {
-    description = "Add FIDO2 SSH key to agent";
-    after = [ "ssh-agent.service" ];
-    requires = [ "ssh-agent.service" ];
-    wantedBy = [ "default.target" ];
-    unitConfig.ConditionPathExists = "%h/.ssh/id_ed25519_sk";
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      Environment = "SSH_AUTH_SOCK=%t/ssh-agent";
-      ExecStart = "${pkgs.openssh}/bin/ssh-add %h/.ssh/id_ed25519_sk";
-    };
-  };
 }

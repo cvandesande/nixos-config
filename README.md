@@ -419,22 +419,39 @@ sudo systemd-cryptenroll \
 Do not remove the passphrase slot until every intended unlock path has been
 tested.
 
-## 9. Workstation only: YubiKey SSH agent
+## 9. Workstation only: FIDO2 SSH keys
 
 Skip this section for `nix-vm-*`.
 
-The system uses the OpenSSH agent with the FIDO2 key auto-added at login
-(via the `ssh-add-fido2` user service). Verify the key is loaded:
+SSH keys are hardware-backed `ed25519-sk` key handles (`id_ed25519_sk_yk1`,
+`id_ed25519_sk_yk2`, `id_ed25519_sk_nk`). `~/.ssh/config` lists them as
+`IdentityFile` entries, so OpenSSH talks to the plugged-in token directly and
+asks for the PIN and a touch on each connection (through `ksshaskpass` when
+there is no terminal). No agent is involved. On `liltig`, `~/.ssh` is a symlink
+into Nextcloud (`~/Nextcloud/Config/ssh`).
+
+On a new host there is no `~/.ssh`. Copy the handles and config from an
+existing host. The handles are useless without the physical token. The config's
+`ControlPath` needs the `sockets` directory to exist.
 
 ```bash
-ssh-add -L
+NEWHOST=nomad
+ssh "$NEWHOST" 'mkdir -p -m 700 ~/.ssh/sockets'
+scp ~/.ssh/id_ed25519_sk_{yk1,yk2,nk}{,.pub} ~/.ssh/config "$NEWHOST":.ssh/
+ssh "$NEWHOST" 'chmod 600 ~/.ssh/id_ed25519_sk_{yk1,yk2,nk}'
 ```
 
-If the key is not listed, check the service status:
+Verify with a token plugged into the new host:
 
 ```bash
-systemctl --user status ssh-add-fido2
+fido2-token -L
+ssh -T git@github.com
 ```
+
+`liltig` and `nomad` disable password and keyboard-interactive SSH logins, so
+they only accept tokens listed in `~/.ssh/authorized_keys`. Authorize at least
+two tokens before switching a host to key-only logins, so losing one does not
+lock you out of SSH.
 
 ## Daily rebuild flow
 
