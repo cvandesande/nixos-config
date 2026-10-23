@@ -1,11 +1,8 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ inputs, ... }:
 
 {
   imports = [
+    inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
     ./claude-router.nix
     ../../modules/roles/workstation.nix
     (import ../../modules/storage/luks-btrfs.nix {
@@ -24,8 +21,6 @@
     PasswordAuthentication = false;
     KbdInteractiveAuthentication = false; # UsePAM defeats this
   };
-
-  hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   workstation.zfs.enable = false;
 
