@@ -21,6 +21,11 @@
   time.timeZone = "Europe/Dublin";
   system.stateVersion = "26.05";
 
+  services.openssh.settings = {
+    PasswordAuthentication = false;
+    KbdInteractiveAuthentication = false; # UsePAM defeats this
+  };
+
   boot.kernelModules = [ "kvm-intel" ];
 
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
