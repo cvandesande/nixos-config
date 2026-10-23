@@ -9,6 +9,11 @@
 
     pi.url = "github:earendil-works/pi/stable";
 
+    nixos-hardware = {
+      url = "github:NixOS/nixos-hardware/master";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -53,6 +58,7 @@
       nixosConfigurations = {
         liltig = mkNixos "x86_64-linux" ./hosts/liltig/configuration.nix;
         nuc = mkNixos "x86_64-linux" ./hosts/nuc/configuration.nix;
+        nomad = mkNixos "x86_64-linux" ./hosts/nomad/configuration.nix;
         nix-vm-x86_64 = mkNixos "x86_64-linux" ./hosts/nix-vm/configuration.nix;
         nix-vm-aarch64 = mkNixos "aarch64-linux" ./hosts/nix-vm/configuration.nix;
       };

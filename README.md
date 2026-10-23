@@ -31,6 +31,7 @@ Host roles:
 | --- | --- | --- | --- |
 | `liltig` | Workstation/virtualisation host | LUKS + Btrfs + swap | KDE Plasma |
 | `nuc` | Workstation | LUKS + Btrfs + swap | KDE Plasma |
+| `nomad` | Laptop workstation (Framework 13 Pro) | LUKS + Btrfs + swap | KDE Plasma |
 | `nix-vm-x86_64` | Headless development VM | Plain ext4 | None |
 | `nix-vm-aarch64` | Headless development VM | Plain ext4 | None |
 
@@ -44,6 +45,12 @@ Use the NUC target:
 
 ```bash
 .#nuc
+```
+
+Use the Framework Laptop 13 Pro target:
+
+```bash
+.#nomad
 ```
 
 Use the development VM target for an x86_64 host:
@@ -100,7 +107,7 @@ cat "hosts/$HOST/configuration.nix"
 
 ## 4. Partition, format, and mount
 
-For `liltig` and `nuc`, this partitions the disk, creates LUKS, formats Btrfs,
+For `liltig`, `nuc` and `nomad`, this partitions the disk, creates LUKS, formats Btrfs,
 creates swap, and mounts the new system. For `nix-vm-*`, this creates only an EFI
 system partition and a plain ext4 root filesystem.
 
@@ -130,7 +137,7 @@ These do not use Lanzaboote, so the plain install handles the bootloader:
 nixos-install --flake ".#$HOST"
 ```
 
-### Workstation hosts (`liltig`, `nuc`)
+### Workstation hosts (`liltig`, `nuc`, `nomad`)
 
 The workstation profile enables Lanzaboote, and its bootloader installer is
 invoked as:
