@@ -459,8 +459,8 @@ lock you out of SSH.
 Windows. On Linux, [speaker-tuning-to-easyeffects](https://github.com/antoinecellerier/speaker-tuning-to-easyeffects)
 converts that tuning into an EasyEffects 8.x preset. It gives the speaker
 correction (FIR, EQ, compressor, limiter), not Atmos spatial processing. The
-host config only installs `easyeffects`; the preset lives in `~/.config` and is
-generated once per user.
+host config only installs `easyeffects`; the preset lives in
+`~/.local/share/easyeffects` and is generated once per user.
 
 Download Framework's Windows driver bundle for the Core Ultra Series 3 (an
 `.exe` that 7-Zip can unpack, about 1.7 GB) from
@@ -473,14 +473,22 @@ git clone https://github.com/antoinecellerier/speaker-tuning-to-easyeffects
 cd speaker-tuning-to-easyeffects
 nix-shell -p p7zip "python3.withPackages (p: [ p.numpy p.scipy p.rich p.rich-argparse ])"
 python3 dolby_to_easyeffects.py --doctor
-python3 dolby_to_easyeffects.py --autoload ~/Downloads/Framework_Laptop_13_Intel_Core_Ultra_Series3_driver_bundle_W11_v101_2026_06_05.exe
+python3 dolby_to_easyeffects.py ~/Downloads/Framework_Laptop_13_Intel_Core_Ultra_Series3_driver_bundle_W11_v101_2026_06_05.exe --autoload
 ```
 
-Start EasyEffects once so it keeps running in the background. If the sound is
-quieter than expected, re-run with `--enable autogain`; if it is harsh, disable
-filters (see the project's `docs/troubleshooting.md`). `--uninstall` removes
-what the script installed. The effect can also apply to HDMI, Bluetooth and
-headsets until you change the EasyEffects output setup.
+Put the path before `--autoload`: the flag takes an optional preset name and
+would swallow the path. The run writes `Dolby-Balanced`, `Dolby-Detailed` and
+`Dolby-Warm` to `~/.local/share/easyeffects/output` and autoloads `Dolby-Balanced`
+on the built-in speakers.
+
+Launch EasyEffects once from the desktop first (it cannot start from SSH), and
+turn on Preferences > Background Service > "Autostart on login", or the preset
+only applies while it is open.
+
+If the sound is quieter than expected, re-run with `--enable autogain`; if it is
+harsh, disable filters (see the project's `docs/troubleshooting.md`).
+`--uninstall` removes what the script installed. The effect can also apply to
+HDMI, Bluetooth and headsets until you change the EasyEffects output setup.
 
 ## Daily rebuild flow
 
