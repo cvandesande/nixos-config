@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-    spotifast.url = "github:crmne/spotifast/v0.13.3";
+    spotifast.url = "github:crmne/spotifast/v0.14.1";
 
     pi.url = "github:earendil-works/pi/stable";
 
