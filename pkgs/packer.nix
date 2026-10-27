@@ -2,6 +2,7 @@
 # packer-<system> flake inputs. nixpkgs builds packer from source because it is
 # BSL-licensed (unfree, so not in cache.nixos.org).
 {
+  lib,
   stdenvNoCC,
   unzip,
   src,
@@ -29,6 +30,7 @@ stdenvNoCC.mkDerivation {
   meta = {
     description = "Tool for creating machine images (official release binary)";
     homepage = "https://www.packer.io";
+    license = lib.licenses.bsl11;
     mainProgram = "packer";
   };
 }

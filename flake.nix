@@ -7,8 +7,9 @@
 
     pi.url = "github:earendil-works/pi/stable";
 
-    # Release binaries (see pkgs/). To update, change the version in the URLs and
-    # rebuild; the lock file re-pins the hashes.
+    # Release binaries (packer and rtk are unfree, see modules/profiles/unfree.nix;
+    # spotifast is not). To update, change the version in the URLs and rebuild;
+    # the lock file re-pins the hashes.
     packer-x86_64-linux = {
       url = "file+https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_amd64.zip";
       flake = false;
@@ -67,11 +68,7 @@
               inherit system;
               config.allowUnfreePredicate =
                 pkg:
-                builtins.elem (nixpkgs.lib.getName pkg) [
-                  "discord"
-                  "obsidian"
-                  "zoom"
-                ];
+                builtins.elem (nixpkgs.lib.getName pkg) (import ./modules/profiles/unfree.nix).names;
             };
           };
         };

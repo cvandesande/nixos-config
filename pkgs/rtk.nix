@@ -1,6 +1,7 @@
 # rtk-oss release binary from rtk-ai/rtk, taken from the rtk-<system> flake
 # inputs instead of building from source.
 {
+  lib,
   stdenv,
   autoPatchelfHook,
   src,
@@ -30,6 +31,7 @@ stdenv.mkDerivation {
   meta = {
     description = "CLI proxy that reduces LLM token usage (release binary)";
     homepage = "https://github.com/rtk-ai/rtk";
+    license = lib.licenses.unfree;
     mainProgram = "rtk";
   };
 }

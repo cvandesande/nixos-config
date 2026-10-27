@@ -10,6 +10,8 @@
     ../profiles/desktop.nix
     ../profiles/dev-toolchain.nix
     ../profiles/secure-boot-luks.nix
+    (import ../profiles/unfree.nix).devTools
+    (import ../profiles/unfree.nix).desktop
     ../profiles/virtualisation-host.nix
     ../profiles/workstation.nix
   ];
