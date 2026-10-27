@@ -106,7 +106,24 @@ in
       sddm = {
         enable = true;
         wayland.enable = true;
-        settings.General.Numlock = "on";
+        settings = {
+          General.Numlock = "on";
+          # NixOS's default kwin command omits --inputmethod, so the greeter's
+          # on-screen keyboard button has nothing to show. kwin only shows the
+          # panel on touch/tablet hardware unless KWIN_IM_SHOW_ALWAYS is set
+          # (KDE bug 466948).
+          Wayland.CompositorCommand = lib.concatStringsSep " " [
+            "${pkgs.coreutils}/bin/env"
+            "KWIN_IM_SHOW_ALWAYS=1"
+            "${lib.getBin pkgs.kdePackages.kwin}/bin/kwin_wayland"
+            "--no-global-shortcuts"
+            "--no-kactivities"
+            "--no-lockscreen"
+            "--locale1"
+            "--inputmethod"
+            "${pkgs.kdePackages.plasma-keyboard}/bin/plasma-keyboard"
+          ];
+        };
       };
 
       autoLogin = {

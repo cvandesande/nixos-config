@@ -27,11 +27,11 @@
       flake = false;
     };
     spotifast-x86_64-linux = {
-      url = "file+https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-x86_64-unknown-linux-gnu.tar.gz";
+      url = "file+https://github.com/crmne/spotifast/releases/download/v0.14.2/spotifast-v0.14.2-x86_64-unknown-linux-gnu.tar.gz";
       flake = false;
     };
     spotifast-aarch64-linux = {
-      url = "file+https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-aarch64-unknown-linux-gnu.tar.gz";
+      url = "file+https://github.com/crmne/spotifast/releases/download/v0.14.2/spotifast-v0.14.2-aarch64-unknown-linux-gnu.tar.gz";
       flake = false;
     };
 
