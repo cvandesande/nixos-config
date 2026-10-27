@@ -152,16 +152,16 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1792842277,
-        "narHash": "sha256-pGPnZGi8y9d76xNeracniXO3dsYVROEmMkMc8jD0Ihc=",
+        "lastModified": 1792773339,
+        "narHash": "sha256-rZLrzrC6i+jnTAlvPZHogKDulY7WWDEv9hJeHieO7Zw=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "d3b13ad75cc492690728f9307e443dec9ef9a20e",
+        "rev": "3ec636362e1816bc2f0888fa0fa2c69f1bc9e504",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -182,20 +182,28 @@
         "type": "github"
       }
     },
-    "nixpkgs_3": {
+    "packer-aarch64-linux": {
+      "flake": false,
       "locked": {
-        "lastModified": 1787736819,
-        "narHash": "sha256-cV5xEJJK3BvhU8rEd4mC9UsmDi5qscv/kzGPhBRC5WA=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "9fbb54b33e91ee4ca368e35a78e0613c720600b3",
-        "type": "github"
+        "narHash": "sha256-aLL1XtasYMEPTfYaZZwNWPgSLNnuxtl3YRkh4UQeZJc=",
+        "type": "file",
+        "url": "https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_arm64.zip"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
+        "type": "file",
+        "url": "https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_arm64.zip"
+      }
+    },
+    "packer-x86_64-linux": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-ZlTrTwVO7tUVllcCtCeMvlUY/SNE2PpfKZ6Diy5y0MU=",
+        "type": "file",
+        "url": "https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_amd64.zip"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_amd64.zip"
       }
     },
     "pi": {
@@ -248,8 +256,37 @@
         "nixos-hardware": "nixos-hardware",
         "nixpkgs": "nixpkgs",
         "nixpkgs-unstable": "nixpkgs-unstable",
+        "packer-aarch64-linux": "packer-aarch64-linux",
+        "packer-x86_64-linux": "packer-x86_64-linux",
         "pi": "pi",
-        "spotifast": "spotifast"
+        "rtk-aarch64-linux": "rtk-aarch64-linux",
+        "rtk-x86_64-linux": "rtk-x86_64-linux",
+        "spotifast-aarch64-linux": "spotifast-aarch64-linux",
+        "spotifast-x86_64-linux": "spotifast-x86_64-linux"
+      }
+    },
+    "rtk-aarch64-linux": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-lRvT8dL20/1yL2Z971+87sT78CjIkhNEY6sJezKAqcQ=",
+        "type": "file",
+        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-aarch64-unknown-linux-gnu.tar.gz"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-aarch64-unknown-linux-gnu.tar.gz"
+      }
+    },
+    "rtk-x86_64-linux": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-D7uXFUU9J+6rzehh3gPXjc6hWXpg4ASkS06I7yFvwic=",
+        "type": "file",
+        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-x86_64-unknown-linux-musl.tar.gz"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-x86_64-unknown-linux-musl.tar.gz"
       }
     },
     "rust-overlay": {
@@ -273,45 +310,28 @@
         "type": "github"
       }
     },
-    "rust-overlay_2": {
-      "inputs": {
-        "nixpkgs": [
-          "spotifast",
-          "nixpkgs"
-        ]
-      },
+    "spotifast-aarch64-linux": {
+      "flake": false,
       "locked": {
-        "lastModified": 1787834454,
-        "narHash": "sha256-jXSvqn04IOecJCvSvl8+g3PsbDVNP6qKs6dKUs/b16k=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "dc2fd1acc537f3583744e1373597a5731ff7a6e3",
-        "type": "github"
+        "narHash": "sha256-INyPcHRvQ9kyyW7j5xfI9DAM0yeV9mKNm3nz1h0+SjE=",
+        "type": "file",
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-aarch64-unknown-linux-gnu.tar.gz"
       },
       "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
+        "type": "file",
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-aarch64-unknown-linux-gnu.tar.gz"
       }
     },
-    "spotifast": {
-      "inputs": {
-        "nixpkgs": "nixpkgs_3",
-        "rust-overlay": "rust-overlay_2"
-      },
+    "spotifast-x86_64-linux": {
+      "flake": false,
       "locked": {
-        "lastModified": 1792530210,
-        "narHash": "sha256-RYeHaD3c5UfkF3f7dsfMlyKNL4u2CPBO2Zxq0bUg5x0=",
-        "owner": "crmne",
-        "repo": "spotifast",
-        "rev": "3ce8b3f274717e973c2914a93f7255e45ced06dd",
-        "type": "github"
+        "narHash": "sha256-ak+h5Cx3UJdSKN4Dj+oUzKv6oQTaTq30ci7Pk7Vn9NQ=",
+        "type": "file",
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-x86_64-unknown-linux-gnu.tar.gz"
       },
       "original": {
-        "owner": "crmne",
-        "ref": "v0.14.1",
-        "repo": "spotifast",
-        "type": "github"
+        "type": "file",
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-x86_64-unknown-linux-gnu.tar.gz"
       }
     }
   },

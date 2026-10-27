@@ -14,8 +14,8 @@
     pkgsUnstable.kubernetes-helm
     pkgsUnstable.sops
     pkgsUnstable.talosctl
-    pkgsUnstable.rtk
-    pkgsUnstable.packer
+    (callPackage ../../pkgs/rtk.nix { src = inputs."rtk-${pkgs.stdenv.hostPlatform.system}"; })
+    (callPackage ../../pkgs/packer.nix { src = inputs."packer-${pkgs.stdenv.hostPlatform.system}"; })
 
     # Unstable runtimes and editors
     pkgsUnstable.nodejs

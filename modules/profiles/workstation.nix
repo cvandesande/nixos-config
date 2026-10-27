@@ -36,7 +36,7 @@
     users.users.cvandesande.extraGroups = [ "networkmanager" ];
 
     system.autoUpgrade = {
-      enable = true;
+      enable = false;
       flake = "path:/home/cvandesande/nixos-config#${config.networking.hostName}";
       dates = "daily";
       randomizedDelaySec = "45min";

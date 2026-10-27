@@ -27,7 +27,7 @@
       pkgsUnstable.obsidian
       onlyoffice-desktopeditors
       signal-desktop
-      inputs.spotifast.packages.${pkgs.stdenv.hostPlatform.system}.default
+      (callPackage ../../pkgs/spotifast.nix { src = inputs."spotifast-${pkgs.stdenv.hostPlatform.system}"; })
 
       # Hardware tools
       amdgpu_top

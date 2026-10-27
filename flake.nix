@@ -5,9 +5,34 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    spotifast.url = "github:crmne/spotifast/v0.14.1";
-
     pi.url = "github:earendil-works/pi/stable";
+
+    # Release binaries (see pkgs/). To update, change the version in the URLs and
+    # rebuild; the lock file re-pins the hashes.
+    packer-x86_64-linux = {
+      url = "file+https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_amd64.zip";
+      flake = false;
+    };
+    packer-aarch64-linux = {
+      url = "file+https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_arm64.zip";
+      flake = false;
+    };
+    rtk-x86_64-linux = {
+      url = "file+https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-x86_64-unknown-linux-musl.tar.gz";
+      flake = false;
+    };
+    rtk-aarch64-linux = {
+      url = "file+https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-aarch64-unknown-linux-gnu.tar.gz";
+      flake = false;
+    };
+    spotifast-x86_64-linux = {
+      url = "file+https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-x86_64-unknown-linux-gnu.tar.gz";
+      flake = false;
+    };
+    spotifast-aarch64-linux = {
+      url = "file+https://github.com/crmne/spotifast/releases/download/v0.14.1/spotifast-v0.14.1-aarch64-unknown-linux-gnu.tar.gz";
+      flake = false;
+    };
 
     nixos-hardware = {
       url = "github:NixOS/nixos-hardware/master";
@@ -45,8 +70,6 @@
                 builtins.elem (nixpkgs.lib.getName pkg) [
                   "discord"
                   "obsidian"
-                  "packer"
-                  "rtk"
                   "zoom"
                 ];
             };
