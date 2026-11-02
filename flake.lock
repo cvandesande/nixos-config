@@ -270,11 +270,11 @@
       "locked": {
         "narHash": "sha256-lRvT8dL20/1yL2Z971+87sT78CjIkhNEY6sJezKAqcQ=",
         "type": "file",
-        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-aarch64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-oss-aarch64-unknown-linux-gnu.tar.gz"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-aarch64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-oss-aarch64-unknown-linux-gnu.tar.gz"
       }
     },
     "rtk-x86_64-linux": {
@@ -282,11 +282,11 @@
       "locked": {
         "narHash": "sha256-D7uXFUU9J+6rzehh3gPXjc6hWXpg4ASkS06I7yFvwic=",
         "type": "file",
-        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-x86_64-unknown-linux-musl.tar.gz"
+        "url": "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-oss-x86_64-unknown-linux-musl.tar.gz"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/rtk-ai/rtk/releases/download/v1.1.0/rtk-oss-x86_64-unknown-linux-musl.tar.gz"
+        "url": "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-oss-x86_64-unknown-linux-musl.tar.gz"
       }
     },
     "rust-overlay": {
@@ -313,25 +313,25 @@
     "spotifast-aarch64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-msjZNgpw0eoYJ4wHqM+mIY+jjEWatA6Dncox7Aya5wY=",
+        "narHash": "sha256-pSlegBGuAJDUBvlPyk0r6i/3IkY60rxQJcffNc0BTiE=",
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.2/spotifast-v0.14.2-aarch64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-aarch64-unknown-linux-gnu.tar.gz"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.2/spotifast-v0.14.2-aarch64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-aarch64-unknown-linux-gnu.tar.gz"
       }
     },
     "spotifast-x86_64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-m8638eewXIkA26WkLafnDsYmY/zbmFxUduu1WQSJh9g=",
+        "narHash": "sha256-Y26XbYqouCH6uzFL1OguKO2Bz8t8ZNzMIItKM8Jpa3Q=",
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.2/spotifast-v0.14.2-x86_64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-x86_64-unknown-linux-gnu.tar.gz"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.14.2/spotifast-v0.14.2-x86_64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-x86_64-unknown-linux-gnu.tar.gz"
       }
     }
   },
