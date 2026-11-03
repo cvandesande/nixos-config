@@ -19,6 +19,7 @@
     pkgsUnstable.zed-editor
 
     # CLI utilities
+    android-tools
     bubblewrap
     cosign
     crane
@@ -31,6 +32,7 @@
     htop
     openssl
     jq
+    scrcpy
     tio
     tree
     unzip
