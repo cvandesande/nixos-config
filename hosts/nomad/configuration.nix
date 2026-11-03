@@ -29,6 +29,9 @@
 
   boot.kernelModules = [ "kvm-intel" ];
 
+  # Unused here; avoids the "supply vcc not found" probe message at boot.
+  boot.blacklistedKernelModules = [ "spi_nor" ];
+
   # Speaker correction: see README section 10.
   environment.systemPackages = [ pkgs.easyeffects ];
 
