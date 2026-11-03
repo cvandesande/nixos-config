@@ -52,4 +52,24 @@
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   workstation.zfs.enable = false;
+
+  # power-profiles-daemon doesn't react to AC changes: pick the profile from
+  # the mains state at boot and whenever the charger is (un)plugged.
+  systemd.services.power-profile-auto = {
+    description = "Set power profile from AC state";
+    after = [ "power-profiles-daemon.service" ];
+    wants = [ "power-profiles-daemon.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig.Type = "oneshot";
+    script = ''
+      for ps in /sys/class/power_supply/*; do
+        [ "$(cat "$ps/type")" = Mains ] || continue
+        if [ "$(cat "$ps/online")" = 1 ]; then profile=balanced; else profile=power-saver; fi
+        exec ${pkgs.power-profiles-daemon}/bin/powerprofilesctl set "$profile"
+      done
+    '';
+  };
+  services.udev.extraRules = ''
+    SUBSYSTEM=="power_supply", ATTR{type}=="Mains", TAG+="systemd", ENV{SYSTEMD_WANTS}+="power-profile-auto.service"
+  '';
 }
