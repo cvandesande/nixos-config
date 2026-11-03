@@ -260,25 +260,25 @@
     "spotifast-aarch64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-pSlegBGuAJDUBvlPyk0r6i/3IkY60rxQJcffNc0BTiE=",
+        "narHash": "sha256-L6U58zxFDT9i8wfwrzdJDeE3iQmi16fWDxaah6w8Yjw=",
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-aarch64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.17.0/spotifast-v0.17.0-aarch64-unknown-linux-gnu.tar.gz"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-aarch64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.17.0/spotifast-v0.17.0-aarch64-unknown-linux-gnu.tar.gz"
       }
     },
     "spotifast-x86_64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-Y26XbYqouCH6uzFL1OguKO2Bz8t8ZNzMIItKM8Jpa3Q=",
+        "narHash": "sha256-jQhN+vB+QsxrgPQFzF9o/4Mhidm1+lLh8h9iLaZ89NM=",
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-x86_64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.17.0/spotifast-v0.17.0-x86_64-unknown-linux-gnu.tar.gz"
       },
       "original": {
         "type": "file",
-        "url": "https://github.com/crmne/spotifast/releases/download/v0.16.0/spotifast-v0.16.0-x86_64-unknown-linux-gnu.tar.gz"
+        "url": "https://github.com/crmne/spotifast/releases/download/v0.17.0/spotifast-v0.17.0-x86_64-unknown-linux-gnu.tar.gz"
       }
     }
   },
