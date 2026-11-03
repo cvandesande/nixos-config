@@ -1,5 +1,4 @@
 {
-  inputs,
   pkgs,
   pkgsUnstable,
   ...
@@ -15,10 +14,9 @@
     pkgsUnstable.sops
     pkgsUnstable.talosctl
 
-    # Unstable runtimes and editors
-    pkgsUnstable.nodejs
+    # Runtimes and editors
+    nodejs_26
     pkgsUnstable.zed-editor
-    inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi
 
     # CLI utilities
     bubblewrap

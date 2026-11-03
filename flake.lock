@@ -120,32 +120,16 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1793526781,
-        "narHash": "sha256-2Cxxgpz1+cRgKZJFi12/9LG3aIBN66f2RvFs34Oj/A0=",
+        "lastModified": 1793633738,
+        "narHash": "sha256-tItrb9M8eYA6WhFgmT9tpGKueri3+wRuVA952o/2xSU=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "9bb52223f4f6a0cc606fd0852d8784f896c137d5",
+        "rev": "7dcdd87373d72e7a2173e4db02e20d3d7f495cfd",
         "type": "github"
       },
       "original": {
         "owner": "NixOS",
         "ref": "nixos-26.05",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs-darwin-x64": {
-      "locked": {
-        "lastModified": 1788334797,
-        "narHash": "sha256-nskSa8kDimM7F0VFSP8IdoSNo4G0vKzOtxwvOFpoGDI=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "c19db427a1fdfc7591c0b0baeb4665dcef2c61da",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-26.05-darwin",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -157,22 +141,6 @@
         "owner": "NixOS",
         "repo": "nixpkgs",
         "rev": "0bb2eedc20e4739f29e8045034f2828ad7054f8f",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "nixpkgs_2": {
-      "locked": {
-        "lastModified": 1788316716,
-        "narHash": "sha256-bc7rSpXIdn9QWGNqfWcPZWOhEVF8NoeAZkWq0XWnf/k=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "3ed67ec0a4d3c7ab4ae1f04f8ee8df07bfa506a2",
         "type": "github"
       },
       "original": {
@@ -204,26 +172,6 @@
       "original": {
         "type": "file",
         "url": "https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_amd64.zip"
-      }
-    },
-    "pi": {
-      "inputs": {
-        "nixpkgs": "nixpkgs_2",
-        "nixpkgs-darwin-x64": "nixpkgs-darwin-x64"
-      },
-      "locked": {
-        "lastModified": 1792621753,
-        "narHash": "sha256-N9NOpiiZTbOMDMV+CxvJAgtLjJJ1/8NJBGS0cFHkhsc=",
-        "owner": "earendil-works",
-        "repo": "pi",
-        "rev": "4a080252f06caf63a525d7873c5d94d3c23887e0",
-        "type": "github"
-      },
-      "original": {
-        "owner": "earendil-works",
-        "ref": "stable",
-        "repo": "pi",
-        "type": "github"
       }
     },
     "pre-commit": {
@@ -258,7 +206,6 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "packer-aarch64-linux": "packer-aarch64-linux",
         "packer-x86_64-linux": "packer-x86_64-linux",
-        "pi": "pi",
         "rtk-aarch64-linux": "rtk-aarch64-linux",
         "rtk-x86_64-linux": "rtk-x86_64-linux",
         "spotifast-aarch64-linux": "spotifast-aarch64-linux",

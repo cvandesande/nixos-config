@@ -5,8 +5,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    pi.url = "github:earendil-works/pi/stable";
-
     # Release binaries (packer and rtk are unfree, see modules/profiles/unfree.nix;
     # spotifast is not). rtk uses a releases/latest URL, so `nix flake update`
     # picks up new releases. packer and spotifast put the version in the file
