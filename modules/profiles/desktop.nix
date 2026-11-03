@@ -94,37 +94,22 @@ in
     Theme=Papirus-Dark
   '';
 
-  environment.etc."sddm/kcminputrc".text = ''
+  # NumLock on at the login screen (KDE: 0 = on, 1 = off, 2 = leave unchanged).
+  environment.etc."plasmalogin/kcminputrc".text = ''
     [Keyboard]
     NumLock=0
   '';
+
+  # SDDM and Plasma Login Manager both substack `login`, where pam_fprintd runs
+  # first. The greeter never shows its prompt, so a typed password waits out
+  # fprintd's 30 s timeout. sudo and the Plasma lock screen keep fingerprint.
+  security.pam.services.login.fprintAuth = false;
 
   services = {
     fwupd.enable = true;
 
     displayManager = {
-      sddm = {
-        enable = true;
-        wayland.enable = true;
-        settings = {
-          General.Numlock = "on";
-          # NixOS's default kwin command omits --inputmethod, so the greeter's
-          # on-screen keyboard button has nothing to show. kwin only shows the
-          # panel on touch/tablet hardware unless KWIN_IM_SHOW_ALWAYS is set
-          # (KDE bug 466948).
-          Wayland.CompositorCommand = lib.concatStringsSep " " [
-            "${pkgs.coreutils}/bin/env"
-            "KWIN_IM_SHOW_ALWAYS=1"
-            "${lib.getBin pkgs.kdePackages.kwin}/bin/kwin_wayland"
-            "--no-global-shortcuts"
-            "--no-kactivities"
-            "--no-lockscreen"
-            "--locale1"
-            "--inputmethod"
-            "${pkgs.kdePackages.plasma-keyboard}/bin/plasma-keyboard"
-          ];
-        };
-      };
+      plasma-login-manager.enable = true;
 
       autoLogin = {
         enable = false;
@@ -142,13 +127,24 @@ in
 
   systemd = {
     tmpfiles.rules = [
-      "d /var/lib/sddm/.config 0755 sddm sddm -"
-      "C+ /var/lib/sddm/.config/kcminputrc 0644 sddm sddm - /etc/sddm/kcminputrc"
+      "d /var/lib/plasmalogin/.config 0755 plasmalogin plasmalogin -"
+      "C+ /var/lib/plasmalogin/.config/kcminputrc 0644 plasmalogin plasmalogin - /etc/plasmalogin/kcminputrc"
     ];
 
     services.fwupd-refresh.serviceConfig.User = lib.mkForce "root";
 
     user = {
+      # The greeter's kwin already runs with --inputmethod plasma-keyboard, but
+      # only shows the panel on touch/tablet hardware unless this is set
+      # (KDE bug 466948). This unit only runs for the plasmalogin greeter user.
+      services.plasma-login-kwin_wayland = {
+        overrideStrategy = "asDropin";
+        environment.KWIN_IM_SHOW_ALWAYS = "1";
+        # Don't let NixOS inject its minimal PATH into the drop-in: kwin is
+        # told to launch a bare `plasma-keyboard`, found via the system PATH.
+        path = lib.mkForce [ ];
+      };
+
       services.notify-reboot-required = {
         description = "Notify when NixOS updates are installed";
         serviceConfig = {
