@@ -72,6 +72,10 @@
         email = "cvandesande@opendmz.com";
       };
     };
+    tmux = {
+      enable = true;
+      extraConfig = "set -g mouse on";
+    };
     vim.enable = true;
   };
 
