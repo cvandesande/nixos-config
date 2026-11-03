@@ -1,0 +1,16 @@
+--- a/server.py	2026-11-03 21:39:49.587559731 +0000
++++ b/server.py	2026-11-03 21:39:49.601254793 +0000
+@@ -249,8 +249,12 @@
+         if state and state != self.last_service_state:
+             self.store.add_event('info' if state == 'active' else 'warning', 'Qwen service: ' + state)
+             self.last_service_state = state
++        enter = self.service.get('ActiveEnterTimestamp')
++        if enter != getattr(self, 'service_enter', enter):
++            self.allocations = None  # halogen restarted: re-read this run's startup report
++        self.service_enter = enter
+         if self.allocations is None:
+-            logs = command(['podman', 'logs', '--tail', '2000', 'qwen-flash'])
++            logs = command(['journalctl', 'CONTAINER_NAME=halogen', '--since', enter or 'now', '--grep', 'locked in RAM', '-n', '1', '-o', 'cat', '--no-pager'])
+             found = re.search(r'memory: ([\d.]+) GiB of weights locked in RAM(?: \([^)]*\))?, ([\d.]+) GiB of KV pool, ([\d.]+) GiB of working memory', logs)
+             if found:
+                 self.allocations = dict(zip(('weights_gib', 'kv_gib', 'working_gib'), map(float, found.groups())))

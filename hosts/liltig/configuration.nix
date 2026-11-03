@@ -4,6 +4,7 @@
   imports = [
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
     ./claude-router.nix
+    ./strixdash.nix
     ../../modules/roles/workstation.nix
     (import ../../modules/storage/luks-btrfs.nix {
       device = "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232";
