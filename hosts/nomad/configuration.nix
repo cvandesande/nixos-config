@@ -32,6 +32,23 @@
   # Speaker correction: see README section 10.
   environment.systemPackages = [ pkgs.easyeffects ];
 
+  # Run as a user service rather than XDG autostart: EasyEffects aborts whenever
+  # PipeWire disconnects (e.g. pipewire restarted by `nixos-rebuild switch`), and
+  # XDG autostart units are never restarted.
+  systemd.user.services.easyeffects = {
+    description = "Easy Effects";
+    wantedBy = [ "graphical-session.target" ];
+    partOf = [ "graphical-session.target" ];
+    after = [ "graphical-session.target" "pipewire.service" "wireplumber.service" ];
+    wants = [ "pipewire.service" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.easyeffects}/bin/easyeffects --hide-window --service-mode";
+      ExecStop = "${pkgs.easyeffects}/bin/easyeffects --quit";
+      Restart = "on-failure";
+      RestartSec = 2;
+    };
+  };
+
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   workstation.zfs.enable = false;
