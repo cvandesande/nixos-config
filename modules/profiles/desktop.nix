@@ -105,6 +105,9 @@ in
   # fprintd's 30 s timeout. sudo and the Plasma lock screen keep fingerprint.
   security.pam.services.login.fprintAuth = false;
 
+  # i2c-dev + /dev/i2c-* so Plasma/KWin can set external monitor brightness over DDC/CI.
+  users.users.cvandesande.extraGroups = [ "i2c" ];
+
   services = {
     fwupd.enable = true;
 
@@ -187,6 +190,8 @@ in
   };
 
   hardware = {
+    i2c.enable = true;
+
     bluetooth = {
       enable = true;
       powerOnBoot = true;
