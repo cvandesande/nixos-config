@@ -137,12 +137,10 @@ in
     services.fwupd-refresh.serviceConfig.User = lib.mkForce "root";
 
     user = {
-      # The greeter's kwin already runs with --inputmethod plasma-keyboard, but
-      # only shows the panel on touch/tablet hardware unless this is set
-      # (KDE bug 466948). This unit only runs for the plasmalogin greeter user.
+      # The greeter's kwin already runs with --inputmethod plasma-keyboard.
+      # This unit only runs for the plasmalogin greeter user.
       services.plasma-login-kwin_wayland = {
         overrideStrategy = "asDropin";
-        environment.KWIN_IM_SHOW_ALWAYS = "1";
         # Don't let NixOS inject its minimal PATH into the drop-in: kwin is
         # told to launch a bare `plasma-keyboard`, found via the system PATH.
         path = lib.mkForce [ ];

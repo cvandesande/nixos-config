@@ -63,6 +63,10 @@
 
   services.thermald.enable = true;
 
+  # The greeter's kwin only shows the on-screen keyboard on touch/tablet
+  # hardware unless this is set (KDE bug 466948).
+  systemd.user.services.plasma-login-kwin_wayland.environment.KWIN_IM_SHOW_ALWAYS = "1";
+
   workstation.zfs.enable = false;
 
   fileSystems."/home/cvandesande/mnt/whiterock" = {
