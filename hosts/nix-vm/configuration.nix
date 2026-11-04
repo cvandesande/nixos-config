@@ -14,11 +14,13 @@
     })
   ];
 
-  networking.hostName = "nix-vm";
-  networking.hostId = "c6d8f31a";
-  networking.networkmanager.enable = false;
-  networking.useDHCP = false;
-  networking.useNetworkd = true;
+  networking = {
+    hostName = "nix-vm";
+    hostId = "c6d8f31a";
+    networkmanager.enable = false;
+    useDHCP = false;
+    useNetworkd = true;
+  };
 
   systemd.network = {
     enable = true;

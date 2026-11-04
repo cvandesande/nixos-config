@@ -137,36 +137,38 @@ in
     services.fwupd-refresh.serviceConfig.User = lib.mkForce "root";
 
     user = {
-      # The greeter's kwin already runs with --inputmethod plasma-keyboard.
-      # This unit only runs for the plasmalogin greeter user.
-      services.plasma-login-kwin_wayland = {
-        overrideStrategy = "asDropin";
-        # Don't let NixOS inject its minimal PATH into the drop-in: kwin is
-        # told to launch a bare `plasma-keyboard`, found via the system PATH.
-        path = lib.mkForce [ ];
-      };
-
-      services.notify-reboot-required = {
-        description = "Notify when NixOS updates are installed";
-        serviceConfig = {
-          Type = "oneshot";
-          ExecStart = notifyRebootRequired;
+      services = {
+        # The greeter's kwin already runs with --inputmethod plasma-keyboard.
+        # This unit only runs for the plasmalogin greeter user.
+        plasma-login-kwin_wayland = {
+          overrideStrategy = "asDropin";
+          # Don't let NixOS inject its minimal PATH into the drop-in: kwin is
+          # told to launch a bare `plasma-keyboard`, found via the system PATH.
+          path = lib.mkForce [ ];
         };
-      };
 
-      # Store paths in pinned launcher entries go stale on every rebuild and
-      # render as question marks; rewrite them to applications: URIs first.
-      services.fix-plasma-pins = {
-        description = "Rewrite nix-store launcher pins to applications: URIs";
-        wantedBy = [ "plasma-core.target" ];
-        before = [ "plasma-plasmashell.service" ];
-        serviceConfig.Type = "oneshot";
-        script = ''
-          f="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
-          [ -f "$f" ] || exit 0
-          ${pkgs.gnused}/bin/sed -i -E \
-            's#file:///nix/store/[a-z0-9]+-system-path/share/applications/([^,]+\.desktop)#applications:\1#g' "$f"
-        '';
+        notify-reboot-required = {
+          description = "Notify when NixOS updates are installed";
+          serviceConfig = {
+            Type = "oneshot";
+            ExecStart = notifyRebootRequired;
+          };
+        };
+
+        # Store paths in pinned launcher entries go stale on every rebuild and
+        # render as question marks; rewrite them to applications: URIs first.
+        fix-plasma-pins = {
+          description = "Rewrite nix-store launcher pins to applications: URIs";
+          wantedBy = [ "plasma-core.target" ];
+          before = [ "plasma-plasmashell.service" ];
+          serviceConfig.Type = "oneshot";
+          script = ''
+            f="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+            [ -f "$f" ] || exit 0
+            ${pkgs.gnused}/bin/sed -i -E \
+              's#file:///nix/store/[a-z0-9]+-system-path/share/applications/([^,]+\.desktop)#applications:\1#g' "$f"
+          '';
+        };
       };
 
       paths.notify-reboot-required = {
