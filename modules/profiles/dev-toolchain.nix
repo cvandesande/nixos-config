@@ -7,11 +7,9 @@
 {
   environment.systemPackages = with pkgs; [
     # Unstable infrastructure tools
-    pkgsUnstable.gh
     pkgsUnstable.kubectl
     pkgsUnstable.kubectl-cnpg
     pkgsUnstable.kubernetes-helm
-    pkgsUnstable.sops
     pkgsUnstable.talosctl
 
     # Runtimes and editors
@@ -26,6 +24,7 @@
     curl
     dnsutils
     fastfetch
+    gh
     gnumake
     fd
     file
@@ -33,6 +32,7 @@
     openssl
     jq
     scrcpy
+    sops
     tio
     tree
     unzip

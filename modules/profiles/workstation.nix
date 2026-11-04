@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  pkgsUnstable,
   ...
 }:
 
@@ -15,11 +14,9 @@
 
   config = {
     boot = {
-      kernelPackages = lib.mkDefault pkgsUnstable.linuxPackages_xanmod_latest;
-
       supportedFilesystems = lib.mkIf config.workstation.zfs.enable [ "zfs" ];
       zfs = lib.mkIf config.workstation.zfs.enable {
-        package = pkgsUnstable.zfs;
+        package = pkgs.zfs;
         forceImportRoot = false;
       };
     };

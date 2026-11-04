@@ -1,7 +1,7 @@
 {
   lib,
   modulesPath,
-  pkgsUnstable,
+  pkgs,
   ...
 }:
 
@@ -35,7 +35,8 @@
   system.stateVersion = "26.05";
 
   boot = {
-    kernelPackages = pkgsUnstable.linuxPackages_latest;
+    # Standard NixOS kernel (LTS) instead of the Xanmod default from modules/base.
+    kernelPackages = pkgs.linuxPackages;
 
     loader = {
       timeout = 3;
