@@ -70,8 +70,7 @@
             pkgsUnstable = import inputs.nixpkgs-unstable {
               inherit system;
               config.allowUnfreePredicate =
-                pkg:
-                builtins.elem (nixpkgs.lib.getName pkg) (import ./modules/profiles/unfree.nix).names;
+                pkg: builtins.elem (nixpkgs.lib.getName pkg) (import ./modules/profiles/unfree.nix).names;
             };
           };
         };

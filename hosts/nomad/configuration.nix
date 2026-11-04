@@ -42,7 +42,11 @@
     description = "Easy Effects";
     wantedBy = [ "graphical-session.target" ];
     partOf = [ "graphical-session.target" ];
-    after = [ "graphical-session.target" "pipewire.service" "wireplumber.service" ];
+    after = [
+      "graphical-session.target"
+      "pipewire.service"
+      "wireplumber.service"
+    ];
     wants = [ "pipewire.service" ];
     serviceConfig = {
       ExecStart = "${pkgs.easyeffects}/bin/easyeffects --hide-window --service-mode";

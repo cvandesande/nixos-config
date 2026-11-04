@@ -17,7 +17,9 @@
       pkgsUnstable.nextcloud-client
       onlyoffice-desktopeditors
       signal-desktop
-      (callPackage ../../pkgs/spotifast.nix { src = inputs."spotifast-${pkgs.stdenv.hostPlatform.system}"; })
+      (callPackage ../../pkgs/spotifast.nix {
+        src = inputs."spotifast-${pkgs.stdenv.hostPlatform.system}";
+      })
 
       # Hardware tools
       amdgpu_top

@@ -41,7 +41,8 @@
     };
 
     # The flake is a path: input, so fast-forward it first; a failed pull is not fatal.
-    systemd.services.nixos-upgrade.serviceConfig.ExecStartPre = "-${pkgs.util-linux}/bin/runuser -u cvandesande -- ${pkgs.git}/bin/git -C /home/cvandesande/nixos-config pull --ff-only";
+    systemd.services.nixos-upgrade.serviceConfig.ExecStartPre =
+      "-${pkgs.util-linux}/bin/runuser -u cvandesande -- ${pkgs.git}/bin/git -C /home/cvandesande/nixos-config pull --ff-only";
 
     system.activationScripts.diffGens = ''
       (
