@@ -24,6 +24,8 @@
       # Hardware tools
       amdgpu_top
       libva-utils
+      # No NVIDIA backend: it needs the unfree CUDA toolkit and no host has NVIDIA.
+      (nvtopPackages.full.override { nvidia = false; })
       pciutils
       vulkan-tools
 
