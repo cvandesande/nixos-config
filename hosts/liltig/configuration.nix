@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, pkgs, ... }:
 
 let
   lib = inputs.nixpkgs.lib;
@@ -17,22 +17,13 @@ let
   # name here (fail closed). The USB dongle's name is <controller PCI function> plus its
   # USB topology (`enp196s0f3u1u2`), so it is matched as a prefix: that survives a replug
   # to another port on the same controller, but a port wired to a different controller
-  # renames it (`enp<other>s0f3u…`) and needs a new entry. Docker bridges, veths and
+  # renames it (`enp<other>s0f3u…`) and needs a new entry. Container bridges, veths and
   # tunnels stay refused by omission.
   lanIfaces = [
     "enp191s0" # onboard ethernet
     "enp196s0+" # USB-C ethernet dongle; trailing `+` is iptables prefix matching
     "wlp192s0" # wifi
   ];
-  # Docker DNATs published ports straight into FORWARD, past the firewall's INPUT chain, so
-  # networking.firewall.interfaces cannot gate them. DOCKER-USER runs first in FORWARD. The
-  # DROP goes in first and each RETURN is inserted above it, leaving [RETURN... DROP] with
-  # no moment where the port is open, even across a firewall reload.
-  halogenMatch = "-p tcp -m conntrack --ctstate DNAT --ctorigdstport 8731";
-  halogenRules = [
-    "${halogenMatch} -j DROP"
-  ]
-  ++ map (i: "${halogenMatch} -i ${i} -j RETURN") lanIfaces;
 in
 {
   imports = [
@@ -78,12 +69,20 @@ in
     ACTION=="add", SUBSYSTEM=="drm", KERNELS=="0000:c2:00.0", ATTR{device/power_dpm_force_performance_level}="manual", ATTR{device/pp_dpm_fclk}="7"
   '';
 
+  # Rootless podman, still as a system unit: linger provides /run/user/1000, and a static
+  # uid is what makes the unit's RequiresMountsFor=/run/user/<uid>/containers resolve.
+  users.users.cvandesande = {
+    uid = 1000;
+    linger = true;
+  };
+
   virtualisation.oci-containers = {
-    backend = "docker";
+    backend = "podman";
     containers.halogen = {
       image = "ghcr.io/peonist-ai/halogen-flash-server:latest";
       pull = "always";
       autoStart = false;
+      podman.user = "cvandesande";
       ports = [ "8731:8731" ]; # all addresses; the firewall rules below limit it to the LAN NIC
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
       environment = npuEnv // {
@@ -104,44 +103,57 @@ in
         "--device=/dev/dri"
         "--device=/dev/accel/accel0" # the NPU
         "--ipc=host" # ROCm needs it
-        "--ulimit=memlock=-1:-1"
+        # No `--ulimit=memlock` (see LimitMEMLOCK below) and no seccomp option, so podman's
+        # default profile applies -- it costs only perf_event_open and ptrace here.
       ];
     };
   };
 
-  networking.firewall = {
-    # IPv4 is DNATed past INPUT (see halogenRules); this opens the IPv6 docker-proxy path.
-    interfaces = lib.genAttrs lanIfaces (_: {
-      allowedTCPPorts = [ 8731 ];
-    });
-    # DOCKER-USER may not exist yet if the firewall starts before dockerd; dockerd keeps it.
-    # -C guard: a firewall reload re-runs this and must not stack duplicate rules.
-    extraCommands = ''
-      iptables -N DOCKER-USER 2>/dev/null || true
-      ${lib.concatMapStringsSep "\n" (
-        r: "iptables -C DOCKER-USER ${r} 2>/dev/null || iptables -I DOCKER-USER ${r}"
-      ) halogenRules}
-    '';
-    extraStopCommands = lib.concatMapStringsSep "\n" (
-      r: "iptables -D DOCKER-USER ${r} 2>/dev/null || true"
-    ) halogenRules;
-  };
+  # Inherited by the container, unlike `--ulimit=memlock=-1:-1`, which would pin -1 in the
+  # OCI spec for `podman exec` to fail re-applying from an 8 MB-capped shell (crun EPERM).
+  systemd.services.podman-halogen.serviceConfig.LimitMEMLOCK = "infinity";
 
+  # Rootless pasta binds :8731 as an ordinary host socket, so INPUT gates it, v4 and v6:
+  # no DOCKER-USER hook to maintain any more.
+  networking.firewall.interfaces = lib.genAttrs lanIfaces (_: {
+    allowedTCPPorts = [ 8731 ];
+  });
+
+  # Docker stays for project-code-intelligence's compose stack and buildx.
   virtualisation.docker.autoPrune = {
     enable = true;
     dates = "weekly";
   };
 
+  # That root timer cannot see rootless storage, so `pull = "always"` would pile up each
+  # superseded :latest copy. Dangling images only: named images and volumes must survive.
+  systemd.user.services.podman-dangling-prune = {
+    description = "Remove dangling container images";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.podman}/bin/podman image prune -f";
+    };
+  };
+  systemd.user.timers.podman-dangling-prune = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "weekly";
+      RandomizedDelaySec = "4h";
+      Persistent = true;
+    };
+  };
+
   systemd.services.docker.restartIfChanged = false; # a restart kills the container
 
   environment.shellAliases = {
-    llm-start = "systemctl start docker-halogen";
-    llm-stop = "systemctl stop docker-halogen";
-    llm-status = "systemctl is-active docker-halogen";
-    llm-update = "docker pull ghcr.io/peonist-ai/halogen-flash-server:latest";
+    llm-start = "systemctl start podman-halogen";
+    llm-stop = "systemctl stop podman-halogen";
+    llm-status = "systemctl is-active podman-halogen";
+    llm-update = "podman pull ghcr.io/peonist-ai/halogen-flash-server:latest";
     # One-off fetch of the NPU models: needs a writable mount (runtime is :ro), the clock
     # pinned, and llm-stop first. Ctrl-C once the files land. Shares npuEnv with the unit.
-    llm-npu-fetch = "docker run --rm -v /home/cvandesande/models/halogen-qwen3.8-flash-next:/models -e HALOGEN_DOWNLOAD=peonist-ai/halogen-qwen3.8-flash-next ${npuEnvArgs} --device=/dev/kfd --device=/dev/dri --device=/dev/accel/accel0 --ipc=host --ulimit=memlock=-1:-1 ghcr.io/peonist-ai/halogen-flash-server:latest";
+    # Rootless now, so what lands in /models is owned by cvandesande instead of root.
+    llm-npu-fetch = "podman run --rm -v /home/cvandesande/models/halogen-qwen3.8-flash-next:/models -e HALOGEN_DOWNLOAD=peonist-ai/halogen-qwen3.8-flash-next ${npuEnvArgs} --device=/dev/kfd --device=/dev/dri --device=/dev/accel/accel0 --ipc=host ghcr.io/peonist-ai/halogen-flash-server:latest";
   };
 
   fileSystems."/home/cvandesande/mnt/whiterock" = {

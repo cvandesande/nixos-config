@@ -10,14 +10,14 @@ let
   # The patterns become name prefixes (`en+` -> `en`), and the traffic panel sums every match,
   # so it follows whichever NIC is carrying traffic.
   nicPrefixes = "(${lib.concatMapStringsSep ", " (i: "'${lib.removeSuffix "+" i}'") lanIfaces},)";
-  unit = "docker-halogen.service";
+  unit = "podman-halogen.service";
 
   strixdash = pkgs.runCommand "strixdash" { } ''
     mkdir -p $out
     cp -r ${src}/server.py ${src}/web $out/
     chmod -R u+w $out
-    # Engine allocations: read halogen's startup report from journald (docker log driver)
-    # instead of `podman logs`, scoped to the current run and re-read after a restart.
+    # Engine allocations: read halogen's startup report from journald instead of
+    # `podman logs`, scoped to the current run and re-read after a restart.
     patch -p1 -d $out < ${./strixdash-journal.patch}
     substituteInPlace $out/server.py \
       --replace-fail "name.strip() in ('eno1', 'ctidao')" "name.strip().startswith(${nicPrefixes})" \
