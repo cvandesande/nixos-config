@@ -4,14 +4,24 @@ let
   lib = inputs.nixpkgs.lib;
   # NPU models served beside Flash, plus the guard's mode; one attrset so the
   # llm-npu-fetch alias below cannot drift from the container.
+  #
+  # qwen3-embedding-0.6b is here for Open WebUI's knowledge search (RAG_EMBEDDING_MODEL in
+  # openwebui.nix), and costs about 0.8 GiB of locked host memory beside the others. Its files
+  # are already in /models/npu, so nothing needs fetching: they were pulled with the image's own
+  # huggingface_hub against peonist-ai/halogen-npu-qwen3-embedding-0.6b rather than with
+  # llm-npu-fetch, because that alias starts a second full server to Ctrl-C, and a second server
+  # means both llm-stop and the NPU -- and this box's own tooling (pi, claude-router) runs on the
+  # model being stopped. `llm-npu-fetch` stays the way to fetch a model that is not there yet.
   npuEnv = {
-    HALOGEN_NPU_MODELS = "halogen-spotter-0.6b,decider-4b,flux2-klein-4b";
+    HALOGEN_NPU_MODELS = "halogen-spotter-0.6b,decider-4b,flux2-klein-4b,qwen3-embedding-0.6b";
     HALOGEN_AGENT_GUARD = "watch";
   };
   npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
 
-  # Interfaces allowed to reach halogen (:8731) and strixDash (:8787). Neither has auth,
-  # so this names this box's NICs instead of the `en+`/`wl+` wildcards: those admitted any
+  # Interfaces allowed to reach halogen (:8731), strixDash (:8787) and Open WebUI (:8788).
+  # The first two have no auth at all and Open WebUI's login is application-level only, so
+  # the network has to be the gate. This names this box's NICs instead of the `en+`/`wl+`
+  # wildcards: those admitted any
   # interface named en*, which includes a USB dock on an untrusted network and any tunnel
   # that names itself enp*. Unlisted names are refused, so new hardware means adding its
   # name here (fail closed). The USB dongle's name is <controller PCI function> plus its
@@ -30,6 +40,7 @@ in
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
     ./claude-router.nix
     (import ./strixdash.nix { inherit lanIfaces; })
+    (import ./openwebui.nix { inherit lanIfaces; })
     ../../modules/roles/workstation.nix
     # by-path (PCI slot) rather than by-id: a by-id name is the drive's serial
     # (vendor OUI + unit number) and this repository is public. Slot names are
