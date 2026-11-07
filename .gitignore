@@ -6,6 +6,11 @@ result-*
 .direnv/
 .envrc.local
 
+# Pi: the live MCP config carries the Home Assistant token in a server url, which
+# pi cannot substitute away. The tracked template is pi/mcp.json.example; the
+# real file lives in ~/.secrets/pi/mcp.json. See README section 11.
+pi/mcp.json
+
 # editor/OS cruft
 .DS_Store
 *.swp

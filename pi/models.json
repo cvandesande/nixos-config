@@ -1,0 +1,78 @@
+{
+  "$schema": "https://pi.dev/schemas/models.schema.json",
+  "providers": {
+    "openvino": {
+      "name": "OpenVINO (nomad NPU)",
+      "baseUrl": "http://127.0.0.1:8000/v3",
+      "api": "openai-completions",
+      "apiKey": "none",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "thinkingFormat": "qwen-chat-template"
+      },
+      "models": [
+        {
+          "id": "qwen3-8b",
+          "name": "Qwen3-8B (NPU)",
+          "reasoning": true,
+          "contextWindow": 32768,
+          "maxTokens": 4096,
+          "samplingParams": {
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "top_k": 20
+          },
+          "samplingParamsByThinkingLevel": {
+            "off": {
+              "temperature": 0.7,
+              "top_p": 0.8,
+              "top_k": 20
+            }
+          },
+          "thinkingLevelMap": {
+            "minimal": null,
+            "low": null,
+            "high": null
+          }
+        }
+      ]
+    },
+    "halogen": {
+      "name": "Halogen (liltig)",
+      "baseUrl": "http://liltig:8731/v1",
+      "api": "openai-completions",
+      "apiKey": "local",
+      "models": [
+        {
+          "id": "halogen-qwen3.8-flash-next",
+          "name": "Halogen Qwen3.8 Flash Next",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": "none",
+            "minimal": "low",
+            "low": "low",
+            "medium": "medium",
+            "high": "xhigh",
+            "xhigh": "xhigh",
+            "max": "xhigh"
+          },
+          "contextWindow": 262144,
+          "maxTokens": 65536,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "input": [
+            "text",
+            "image"
+          ]
+        }
+      ]
+    }
+  }
+}

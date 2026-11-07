@@ -1,0 +1,39 @@
+{
+  "$comment": [
+    "Template only. The real file is ~/.secrets/pi/mcp.json (mode 600) and is",
+    "git-ignored: ~/.pi/agent/mcp.json is a symlink to it (README section 11).",
+    "Copy this file there on a new host, fill in the Home Assistant token, and",
+    "chmod 600.",
+    "The HA token cannot be templated away: MCP url values get no ${VAR} or",
+    "!command substitution, only env and headers values do.",
+    "The url ends in /readonly so this template cannot hand a new host write access",
+    "to the house by accident; drop the suffix once you have decided the agent may",
+    "call services (ha_call_service and friends are only exposed then)."
+  ],
+  "mcpServers": {
+    "home-assistant": {
+      "url": "https://mcp.opendmz.com/private_REPLACE_WITH_TOKEN/readonly",
+      "description": "Full Home Assistant control (~77 tools): entity state and attribute queries, history, service calls, automations, scripts, and device registry. Use this for anything about sensors, batteries, energy, or history. Appending /readonly to the url restricts the connection to read-only tools.",
+      "timeout": 120,
+      "enabled": true,
+      "exposure": "deferred",
+      "toolExposure": {
+        "ha_get_state": "direct",
+        "ha_search": "direct",
+        "ha_eval_template": "direct",
+        "ha_get_history": "direct",
+        "ha_call_service": "direct",
+        "ha_config_get_automation": "direct",
+        "ha_get_logs": "direct"
+      }
+    },
+    "kagi": {
+      "url": "https://mcp.kagi.com/mcp",
+      "headers": {
+        "Authorization": "!echo Bearer $(cat $HOME/.secrets/pi/kagi.key)"
+      },
+      "exposure": "direct",
+      "description": "Kagi search: web search and fast content extraction/summarization via Kagi API. Use for current events, docs lookups, and fact-checking."
+    }
+  }
+}
