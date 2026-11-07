@@ -1,5 +1,10 @@
 # NixOS installs
 
+One-time, per-machine setup (ISO, Disko, install, Secure Boot/TPM2, FIDO2 SSH
+keys, speaker tuning) lives in [INSTALL.md](INSTALL.md) as sections 1-10. The two
+files share one numbering scheme, so `INSTALL section 3` and `README section 11`
+each name the file they live in.
+
 The workstation installs use:
 
 - Disko for declarative disk partitioning
@@ -65,430 +70,74 @@ Use the development VM target for an ARM64 host:
 .#nix-vm-aarch64
 ```
 
-## 1. Boot the minimal NixOS ISO
+## 11. Pi agent config (`~/.pi/agent`)
 
-Boot the NixOS minimal installer in UEFI mode, then become root:
+The shareable part of Pi's user config is tracked in `pi/` and symlinked into
+`~/.pi/agent`, so Pi can edit its own config and the change shows up in
+`git diff` for you to commit later:
 
-```bash
-sudo -i
-```
+| Repo path | Linked to | Notes |
+|---|---|---|
+| `pi/settings.json` | `~/.pi/agent/settings.json` | Pi rewrites this file itself: `lastChangelogVersion` and `extensionChangelogVersions` move on their own, so expect churn in `git diff`. |
+| `pi/models.json` | `~/.pi/agent/models.json` | halogen on `liltig:8731` (reachable from any LAN host) and OpenVINO on `127.0.0.1:8000` (nomad's own NPU). Both `apiKey` fields are dummies — see below. |
+| `pi/extensions/halogen-npu.ts` | `~/.pi/agent/extensions/halogen-npu.ts` | flux2 image and decider classifier models on the NPU. Honours `HALOGEN_BASE` if a host must point elsewhere. |
 
-Confirm networking works:
+`models.json` is tracked, so it must never carry a real key. Pi keeps real
+credentials in the untracked `auth.json`, and the `apiKey` fields here are
+dummies for the local servers (`none`, `local`). Pi rewrites the file through the
+symlink, so a key typed into a provider dialog can end up in a public
+repository — read `git diff` before committing.
 
-```bash
-ping -c 3 cache.nixos.org
-```
+One shared file also means two per-host mismatches: `openvino` points at
+`127.0.0.1:8000` and only answers on nomad, so `liltig` and `nuc` list a model
+that can never connect; and with `defaultProvider: "halogen"`, a host that cannot
+reach liltig has a dead default model until another is chosen with `/model`.
 
-Install temporary tools in the live environment:
+Symlinks into this working tree rather than `PI_CODING_AGENT_DIR` aimed at
+`/nix/store`: Pi writes into its agent directory (in-place `writeFileSync` on
+`settings.json`, a lock file beside it, plus `install/` and `sessions/`), so a
+read-only store path fails the first time `/settings` saves. Nothing here is a
+NixOS module for the same reason — the repo is the sharing vehicle and a handful
+of `ln -sfn` lines wires it up.
 
-```bash
-nix-shell -p git vim
-```
+Secrets are never in the repo (it is public). They live in `~/.secrets/pi`
+(directory 700, files 600); `mcp.json` is linked from there because that is where
+Pi looks for it, and `kagi.key` is read in place by a header command:
 
-## 2. Clone the config
+| Secret | Why it cannot be tracked |
+|---|---|
+| `mcp.json` | The Home Assistant token is inside the server `url`, and MCP `url` values get no `${VAR}` or `!command` substitution (only `env` and `headers` values do). `/mcp` also saves enable/disable and tool-exposure changes back into this file. Template: `pi/mcp.json.example`. |
+| `kagi.key` | Kagi MCP key, read through `"!echo Bearer $(cat $HOME/.secrets/pi/kagi.key)"`. |
 
-```bash
-cd /tmp
-git clone https://github.com/cvandesande/nixos-config.git
-cd nixos-config
+Everything per-host and regenerable stays in `~/.pi/agent` untracked: `install/`
+(Pi's self-updating release plus its own `rg`), `npm/node_modules` (`settings.json`
+`packages` names `npm:pi-lens` and `npm:pi-rtk-optimizer`; Pi installs them),
+`sessions/`, `auth.json`, `mcp-auth.json`, `models-store.json`.
 
-# Pick the host being installed.
-HOST=liltig
-```
-
-## 3. Verify the target disk
-
-Confirm the selected host and inspect its disk config before running Disko:
-
-```bash
-echo "$HOST"
-cat "hosts/$HOST/configuration.nix"
-```
-
-## 4. Partition, format, and mount
-
-For `liltig`, `nuc` and `nomad`, this partitions the disk, creates LUKS, formats Btrfs,
-creates swap, and mounts the new system. For `nix-vm-*`, this creates only an EFI
-system partition and a plain ext4 root filesystem.
-
-```bash
-nix --experimental-features "nix-command flakes" run github:nix-community/disko -- \
-  --mode disko \
-  --flake ".#$HOST"
-```
-
-After this, the new system should be mounted under `/mnt`.
-
-## 5. Copy the repo into the installed system
+On a new host, after installing Pi itself (its installer owns `~/.pi/agent/install`
+and the `~/.local/bin/pi` symlink) and cloning this repo:
 
 ```bash
-mkdir -p /mnt/etc/nixos
-cp -a . /mnt/etc/nixos/
-cd /mnt/etc/nixos
+# 1. Secrets first. On a host that already had its own settings.json, models.json
+#    or mcp.json, move those out of the agent directory now: `ln -sfn` replaces a
+#    regular file silently and nothing here backs it up.
+mkdir -p ~/.pi/agent/extensions ~/.secrets/pi && chmod 700 ~/.secrets/pi
+cp ~/nixos-config/pi/mcp.json.example ~/.secrets/pi/mcp.json   # then fill in the token
+printf '%s\n' "$KAGI_KEY" > ~/.secrets/pi/kagi.key
+chmod 600 ~/.secrets/pi/mcp.json ~/.secrets/pi/kagi.key
+
+# 2. Link the tracked config in, plus the real mcp.json where Pi looks for it.
+ln -sfn ~/nixos-config/pi/settings.json             ~/.pi/agent/settings.json
+ln -sfn ~/nixos-config/pi/models.json               ~/.pi/agent/models.json
+ln -sfn ~/nixos-config/pi/extensions/halogen-npu.ts ~/.pi/agent/extensions/halogen-npu.ts
+ln -sfn ~/.secrets/pi/mcp.json                      ~/.pi/agent/mcp.json
+
+pi mcp list   # both servers should report connected
 ```
 
-## 6. Install NixOS
-
-### `nix-vm-*` hosts
-
-These do not use Lanzaboote, so the plain install handles the bootloader:
-
-```bash
-nixos-install --flake ".#$HOST"
-```
-
-### Workstation hosts (`liltig`, `nuc`, `nomad`)
-
-The workstation profile enables Lanzaboote, and its bootloader installer is
-invoked as:
-
-```text
-lzbt install --allow-unsigned false \
-  --public-key /var/lib/sbctl/keys/db/db.pem \
-  --private-key /var/lib/sbctl/keys/db/db.key ...
-```
-
-Those keys do not exist yet on a freshly partitioned disk, and
-`systemd-boot` is disabled by `modules/profiles/secure-boot-luks.nix`, so there
-is no fallback. A plain `nixos-install` fails at the bootloader step. Install
-the system first, create the keys inside it, then install the bootloader:
-
-```bash
-# 1. Install the system, leaving the bootloader alone.
-nixos-install --flake ".#$HOST" --no-bootloader
-
-# 2. Create the Secure Boot signing keys inside the new system.
-#    sbctl is already in the system closure, and its default key location
-#    (/var/lib/sbctl) is what boot.lanzaboote.pkiBundle expects.
-nixos-enter --root /mnt -c '/run/current-system/sw/bin/sbctl create-keys'
-
-# 3. Install the signed bootloader.
-NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt \
-  -c '/run/current-system/bin/switch-to-configuration boot'
-```
-
-`NIXOS_INSTALL_BOOTLOADER=1` is required. Without it,
-`switch-to-configuration boot` only updates an existing bootloader instead of
-installing one, which leaves the ESP without boot entries. This is the same
-environment and command `nixos-install` itself uses when it installs the
-bootloader.
-
-Absolute paths matter here. `nixos-enter -c` runs `bash -c`, not a login
-shell, so `/etc/profile` is never sourced and `PATH` still points at the
-installer environment rather than the target's `/run/current-system/sw/bin`.
-A bare `sbctl` would fail with "command not found".
-
-If `sbctl create-keys` fails under the chroot, retry it as
-`/run/current-system/sw/bin/sbctl --disable-landlock create-keys`.
-
-### Both
-
-Set the normal user password before rebooting:
-
-```bash
-nixos-enter --root /mnt -c '/run/current-system/sw/bin/passwd cvandesande'
-```
-
-Then reboot:
-
-```bash
-reboot
-```
-
-## 7. After first boot
-
-For day-to-day work, manage this flake from the user's home directory. Copy the
-installed repo there after the first boot:
-
-```bash
-cp -a /etc/nixos ~/nixos-config
-sudo chown -R "$USER:$(id -gn)" ~/nixos-config
-cd ~/nixos-config
-```
-
-That copy inherits the installer's HTTPS remote from section 2, which has no
-way to authenticate a push. Switch it to SSH:
-
-```bash
-git remote set-url origin git@github.com:cvandesande/nixos-config.git
-git remote -v
-```
-
-If `/etc/nixos` is missing or you prefer a fresh checkout, clone over SSH
-directly instead:
-
-```bash
-git clone git@github.com:cvandesande/nixos-config.git ~/nixos-config
-cd ~/nixos-config
-```
-
-Section 2 clones over HTTPS on purpose: the installer has no SSH keys.
-Only this home-directory checkout needs to push.
-
-## 8. Workstation only: enable Secure Boot, then enroll TPM2 unlock
-
-Skip this section for `nix-vm-*`; it does not use Lanzaboote, Secure Boot
-signing, LUKS, TPM2 unlock, or FIDO2 unlock.
-
-The base install keeps the normal LUKS passphrase. Keep that passphrase even
-after TPM2 unlock works; it is the fallback when firmware, Secure Boot policy,
-or TPM state changes.
-
-TPM2 enrollment uses PCR 7 in this config. PCR 7 measures Secure Boot policy, so
-enable and verify Secure Boot before enrolling the TPM2 LUKS token. If Secure
-Boot is enabled, disabled, reset, or re-keyed later, expect to re-enroll the
-TPM2 token using the passphrase.
-
-### Verify the signed generation
-
-Nothing to build here. The section 6 install already created the signing keys
-and signed the first generation, so just check it:
-
-```bash
-sudo sbctl verify
-```
-
-Expect the bootloader and `/boot/EFI/Linux/nixos-generation-*.efi` to be signed.
-
-An unsigned `/boot/EFI/nixos/kernel-*.efi` is **expected and correct**.
-Lanzaboote does not boot that file. The signed stub carries the kernel and
-initrd hashes in its `.linuxh` and `.initrdh` PE sections and verifies them at
-boot, so the kernel is covered by the stub's signature and needs none of its
-own. sbctl cannot see that second link, so it reports the raw kernel as
-unsigned.
-
-Then continue at "Enroll Secure Boot keys in firmware" below.
-
-### Retrofitting Lanzaboote onto an existing install
-
-Skip this if the host was installed with the section 6 flow. It applies only to
-a host installed *without* Lanzaboote, which is how `nuc` was originally set up.
-
-```bash
-cd ~/nixos-config
-HOST=$(hostname)
-```
-
-Create the signing keys before the first Lanzaboote switch. `sbctl` is in
-`environment.systemPackages`, so no `nix build` is needed. The command is
-idempotent: on a host that already has keys it reports "Secure boot keys have
-already been created" and leaves them untouched.
-
-```bash
-sudo sbctl create-keys
-```
-
-Build and switch to the signed generation:
-
-```bash
-sudo nixos-rebuild switch --flake ".#$HOST"
-sudo sbctl verify
-```
-
-`sbctl verify` should show the bootloader and
-`/boot/EFI/Linux/nixos-generation-*.efi` files as signed. An unsigned
-`/boot/EFI/nixos/kernel-*.efi` file is not the boot path Lanzaboote uses.
-
-### Enroll Secure Boot keys in firmware
-
-Reboot into firmware setup with `F2`. Put Secure Boot into setup/custom mode if
-keys are not enrolled yet, then boot back into NixOS and run:
-
-```bash
-sudo sbctl enroll-keys --microsoft
-```
-
-Reboot again, enable Secure Boot in firmware if needed, and verify from NixOS:
-
-```bash
-sudo sbctl status
-bootctl status
-```
-
-Expected state:
-
-```text
-Setup Mode:  Disabled
-Secure Boot: Enabled
-```
-
-If Secure Boot is disabled but setup mode is also disabled, the keys are usually
-still enrolled; enable Secure Boot in firmware and verify again. Only re-run
-`sbctl enroll-keys --microsoft` if setup mode is enabled or the firmware keys
-were cleared.
-
-### Find the LUKS partition
-
-Disko should create the encrypted partition at:
-
-```text
-/dev/disk/by-partlabel/disk-main-luks
-```
-
-Confirm before enrolling anything:
-
-```bash
-LUKS=/dev/disk/by-partlabel/disk-main-luks
-readlink -f "$LUKS"
-sudo cryptsetup luksDump "$LUKS" | less
-```
-
-If that path does not exist, list the partition labels and pick the LUKS
-container partition, not `/dev/mapper/crypted`:
-
-```bash
-lsblk -o NAME,TYPE,SIZE,FSTYPE,PARTLABEL,MOUNTPOINTS
-```
-
-For example, on the NUC test install the LUKS partition is usually:
-
-```bash
-LUKS=/dev/sda2
-```
-
-### Verify TPM2
-
-The TPM must be visible and usable before LUKS enrollment:
-
-```bash
-ls -l /dev/tpm*
-sudo tpm2_getcap properties-fixed
-```
-
-Expect `/dev/tpmrm0` and successful `tpm2_getcap` output.
-
-### Enroll TPM2 unlock
-
-With Secure Boot enabled and verified, enroll TPM2 unlock bound to PCR 7:
-
-```bash
-sudo systemd-cryptenroll \
-  --tpm2-device=auto \
-  --tpm2-pcrs=7 \
-  "$LUKS"
-```
-
-Check that LUKS now has a `systemd-tpm2` token:
-
-```bash
-sudo cryptsetup luksDump "$LUKS" | less
-```
-
-The initrd must include the TPM2 crypttab option:
-
-```nix
-boot.initrd.luks.devices.crypted.crypttabExtraOpts = [
-  "tpm2-device=auto"
-  "fido2-device=auto"
-];
-```
-
-Rebuild and reboot:
-
-```bash
-sudo nixos-rebuild switch --flake ".#$HOST"
-sudo reboot
-```
-
-Normal boot should unlock through TPM2. If it falls back to the passphrase, boot
-with the passphrase and inspect:
-
-```bash
-sudo journalctl -b | grep -iE 'tpm|crypt|luks'
-```
-
-### Optional FIDO2 unlock
-
-Insert the YubiKey. Set a FIDO2 PIN if one is not already configured:
-
-```bash
-ykman fido info
-ykman fido access change-pin
-```
-
-Then enroll it for LUKS unlock:
-
-```bash
-sudo systemd-cryptenroll \
-  --fido2-device=auto \
-  --fido2-with-client-pin=yes \
-  --fido2-with-user-presence=yes \
-  "$LUKS"
-```
-
-Do not remove the passphrase slot until every intended unlock path has been
-tested.
-
-## 9. Workstation only: FIDO2 SSH keys
-
-Skip this section for `nix-vm-*`.
-
-SSH keys are hardware-backed `ed25519-sk` key handles (`id_ed25519_sk_yk1`,
-`id_ed25519_sk_yk2`, `id_ed25519_sk_nk`). `~/.ssh/config` lists them as
-`IdentityFile` entries, so OpenSSH talks to the plugged-in token directly and
-asks for the PIN and a touch on each connection (through `ksshaskpass` when
-there is no terminal). No agent is involved. On `liltig`, `~/.ssh` is a symlink
-into Nextcloud (`~/Nextcloud/Config/ssh`).
-
-On a new host there is no `~/.ssh`. Copy the handles and config from an
-existing host. The handles are useless without the physical token. The config's
-`ControlPath` needs the `sockets` directory to exist.
-
-```bash
-NEWHOST=nomad
-ssh "$NEWHOST" 'mkdir -p -m 700 ~/.ssh/sockets'
-scp ~/.ssh/id_ed25519_sk_{yk1,yk2,nk}{,.pub} ~/.ssh/config "$NEWHOST":.ssh/
-ssh "$NEWHOST" 'chmod 600 ~/.ssh/id_ed25519_sk_{yk1,yk2,nk}'
-```
-
-Verify with a token plugged into the new host:
-
-```bash
-fido2-token -L
-ssh -T git@github.com
-```
-
-`liltig` and `nomad` disable password and keyboard-interactive SSH logins, so
-they only accept tokens listed in `~/.ssh/authorized_keys`. Authorize at least
-two tokens before switching a host to key-only logins, so losing one does not
-lock you out of SSH.
-
-## 10. Laptop only: speaker tuning
-
-`nomad` only. The Framework 13 Pro speakers ship with a Dolby Atmos tuning on
-Windows. On Linux, [speaker-tuning-to-easyeffects](https://github.com/antoinecellerier/speaker-tuning-to-easyeffects)
-converts that tuning into an EasyEffects 8.x preset. It gives the speaker
-correction (FIR, EQ, compressor, limiter), not Atmos spatial processing. The
-host config only installs `easyeffects`; the preset lives in
-`~/.local/share/easyeffects` and is generated once per user.
-
-Download Framework's Windows driver bundle for the Core Ultra Series 3 (an
-`.exe` that 7-Zip can unpack, about 1.7 GB) from
-<https://resources.frame.work/downloads/laptop-13-pro/intel-core-ultra-3/> and
-check its SHA256 against the one on that page. Then, as your normal user (the
-script refuses `sudo`):
-
-```bash
-git clone https://github.com/antoinecellerier/speaker-tuning-to-easyeffects
-cd speaker-tuning-to-easyeffects
-nix-shell -p p7zip "python3.withPackages (p: [ p.numpy p.scipy p.rich p.rich-argparse ])"
-python3 dolby_to_easyeffects.py --doctor
-python3 dolby_to_easyeffects.py ~/Downloads/Framework_Laptop_13_Intel_Core_Ultra_Series3_driver_bundle_W11_v101_2026_06_05.exe --autoload
-```
-
-Put the path before `--autoload`: the flag takes an optional preset name and
-would swallow the path. The run writes `Dolby-Balanced`, `Dolby-Detailed` and
-`Dolby-Warm` to `~/.local/share/easyeffects/output` and autoloads `Dolby-Balanced`
-on the built-in speakers.
-
-Launch EasyEffects once from the desktop first (it cannot start from SSH), and
-turn on Preferences > Background Service > "Autostart on login", or the preset
-only applies while it is open.
-
-If the sound is quieter than expected, re-run with `--enable autogain`; if it is
-harsh, disable filters (see the project's `docs/troubleshooting.md`).
-`--uninstall` removes what the script installed. The effect can also apply to
-HDMI, Bluetooth and headsets until you change the EasyEffects output setup.
+The links survive Pi's own writes, so this is a one-time setup per host. Re-run
+the four `ln -sfn` lines only to point `~/.pi/agent` at a different checkout, or
+after moving a linked file by hand.
 
 ## Daily rebuild flow
 
