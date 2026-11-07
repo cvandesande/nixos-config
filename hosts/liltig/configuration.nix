@@ -9,12 +9,29 @@ let
     HALOGEN_AGENT_GUARD = "watch";
   };
   npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
+
+  # Where halogen may be reached: any ethernet or wifi NIC (`+` is iptables' name-prefix
+  # wildcard), so moving between the USB dongle, the onboard port and wifi needs no edit.
+  # Docker bridges, veths and tunnels are not listed, so they are refused.
+  lanIfaces = [
+    "en+"
+    "wl+"
+  ];
+  # Docker DNATs published ports straight into FORWARD, past the firewall's INPUT chain, so
+  # networking.firewall.interfaces cannot gate them. DOCKER-USER runs first in FORWARD. The
+  # DROP goes in first and each RETURN is inserted above it, leaving [RETURN... DROP] with
+  # no moment where the port is open, even across a firewall reload.
+  halogenMatch = "-p tcp -m conntrack --ctstate DNAT --ctorigdstport 8731";
+  halogenRules = [
+    "${halogenMatch} -j DROP"
+  ]
+  ++ map (i: "${halogenMatch} -i ${i} -j RETURN") lanIfaces;
 in
 {
   imports = [
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
     ./claude-router.nix
-    ./strixdash.nix
+    (import ./strixdash.nix { inherit lanIfaces; })
     ../../modules/roles/workstation.nix
     (import ../../modules/storage/luks-btrfs.nix {
       device = "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232";
@@ -55,7 +72,7 @@ in
       image = "ghcr.io/peonist-ai/halogen-flash-server:latest";
       pull = "always";
       autoStart = false;
-      ports = [ "127.0.0.1:8731:8731" ];
+      ports = [ "8731:8731" ]; # all addresses; the firewall rules below limit it to the LAN NIC
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
       environment = npuEnv // {
         HALOGEN_TEMPERATURE = "1.0";
@@ -78,6 +95,24 @@ in
         "--ulimit=memlock=-1:-1"
       ];
     };
+  };
+
+  networking.firewall = {
+    # IPv4 is DNATed past INPUT (see halogenRules); this opens the IPv6 docker-proxy path.
+    interfaces = lib.genAttrs lanIfaces (_: {
+      allowedTCPPorts = [ 8731 ];
+    });
+    # DOCKER-USER may not exist yet if the firewall starts before dockerd; dockerd keeps it.
+    # -C guard: a firewall reload re-runs this and must not stack duplicate rules.
+    extraCommands = ''
+      iptables -N DOCKER-USER 2>/dev/null || true
+      ${lib.concatMapStringsSep "\n" (
+        r: "iptables -C DOCKER-USER ${r} 2>/dev/null || iptables -I DOCKER-USER ${r}"
+      ) halogenRules}
+    '';
+    extraStopCommands = lib.concatMapStringsSep "\n" (
+      r: "iptables -D DOCKER-USER ${r} 2>/dev/null || true"
+    ) halogenRules;
   };
 
   virtualisation.docker.autoPrune = {

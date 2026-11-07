@@ -1,12 +1,15 @@
-{ pkgs, ... }:
+{ lanIfaces }: # iptables-style name patterns (`en+`) shared with configuration.nix
+{ pkgs, lib, ... }:
 
 # strixDash (https://github.com/craiu/strixDash): read-only dashboard for halogen on :8731.
 # UI at http://<liltig>:8787. Upstream has no auth/TLS, so it listens on all addresses but
-# the firewall only opens the port on the LAN NIC (not wifi, docker bridges, etc.).
+# the firewall only opens the port on the lanIfaces NICs (not docker bridges, tunnels, etc.).
 # Upstream has no LICENSE file, hence fetched at a pinned rev rather than vendored here.
 let
-  # server.py hardcodes the NIC to graph and the unit halogen runs under; point both at this box.
-  nic = "enp196s0f3u1u2"; # USB ethernet; `ip -br link` if the name ever changes
+  # server.py hardcodes the NICs to graph and the unit halogen runs under; point both at this box.
+  # The patterns become name prefixes (`en+` -> `en`), and the traffic panel sums every match,
+  # so it follows whichever NIC is carrying traffic.
+  nicPrefixes = "(${lib.concatMapStringsSep ", " (i: "'${lib.removeSuffix "+" i}'") lanIfaces},)";
   unit = "docker-halogen.service";
 
   strixdash = pkgs.runCommand "strixdash" { } ''
@@ -17,8 +20,8 @@ let
     # instead of `podman logs`, scoped to the current run and re-read after a restart.
     patch -p1 -d $out < ${./strixdash-journal.patch}
     substituteInPlace $out/server.py \
-      --replace-fail "('eno1', 'ctidao')" "('${nic}',)" \
-      --replace-fail "rates.get('eno1', {})" "rates.get('${nic}', {})" \
+      --replace-fail "name.strip() in ('eno1', 'ctidao')" "name.strip().startswith(${nicPrefixes})" \
+      --replace-fail "rates.get('eno1', {})" "{d + '_bps': sum(r[d + '_bps'] or 0 for r in rates.values()) for d in ('rx', 'tx')}" \
       --replace-fail "'qwen.service'" "'${unit}'"
   '';
 
@@ -30,7 +33,9 @@ let
   };
 in
 {
-  networking.firewall.interfaces.${nic}.allowedTCPPorts = [ 8787 ];
+  networking.firewall.interfaces = lib.genAttrs lanIfaces (_: {
+    allowedTCPPorts = [ 8787 ];
+  });
 
   systemd.services.strixdash = {
     description = "strixDash halogen/Strix Halo dashboard";
