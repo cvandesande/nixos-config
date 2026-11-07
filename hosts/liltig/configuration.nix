@@ -1,5 +1,15 @@
 { inputs, ... }:
 
+let
+  lib = inputs.nixpkgs.lib;
+  # The guard's two NPU models and its mode, in one attrset so the fetch alias below
+  # cannot drift from the container.
+  npuEnv = {
+    HALOGEN_NPU_MODELS = "halogen-spotter-0.6b,decider-4b";
+    HALOGEN_AGENT_GUARD = "watch";
+  };
+  npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
+in
 {
   imports = [
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
@@ -33,6 +43,12 @@
 
   systemd.services.tuned-ppd.unitConfig.ConditionPathExists = "/etc/tuned/ppd.conf";
 
+  # halogen's NPU needs the fabric clock pinned or it corrupts results and can hang the host
+  # (ROCm/TheRock#8709). Row 7 = 2000 MHz, fclk only; keyed on the GPU's PCI function.
+  services.udev.extraRules = ''
+    ACTION=="add", SUBSYSTEM=="drm", KERNELS=="0000:c2:00.0", ATTR{device/power_dpm_force_performance_level}="manual", ATTR{device/pp_dpm_fclk}="7"
+  '';
+
   virtualisation.oci-containers = {
     backend = "docker";
     containers.halogen = {
@@ -41,7 +57,7 @@
       autoStart = false;
       ports = [ "127.0.0.1:8731:8731" ];
       volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
-      environment = {
+      environment = npuEnv // {
         HALOGEN_TEMPERATURE = "1.0";
         HALOGEN_TOP_P = "0.95";
         HALOGEN_TOP_K = "20";
@@ -54,6 +70,7 @@
       extraOptions = [
         "--device=/dev/kfd"
         "--device=/dev/dri"
+        "--device=/dev/accel/accel0" # the NPU
         "--ipc=host" # ROCm needs it
         "--ulimit=memlock=-1:-1"
       ];
@@ -72,6 +89,9 @@
     llm-stop = "systemctl stop docker-halogen";
     llm-status = "systemctl is-active docker-halogen";
     llm-update = "docker pull ghcr.io/peonist-ai/halogen-flash-server:latest";
+    # One-off fetch of the NPU models: needs a writable mount (runtime is :ro), the clock
+    # pinned, and llm-stop first. Ctrl-C once the files land. Shares npuEnv with the unit.
+    llm-npu-fetch = "docker run --rm -v /home/cvandesande/models/halogen-qwen3.8-flash-next:/models -e HALOGEN_DOWNLOAD=peonist-ai/halogen-qwen3.8-flash-next ${npuEnvArgs} --device=/dev/kfd --device=/dev/dri --device=/dev/accel/accel0 --ipc=host --ulimit=memlock=-1:-1 ghcr.io/peonist-ai/halogen-flash-server:latest";
   };
 
   fileSystems."/home/cvandesande/mnt/whiterock" = {
