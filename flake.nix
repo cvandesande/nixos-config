@@ -5,14 +5,8 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    # Release binaries (packer and rtk are unfree, see modules/profiles/unfree.nix;
-    # spotifast is not). rtk uses a releases/latest URL, so `nix flake update`
-    # picks up new releases. packer and spotifast put the version in the file
-    # name, so they are bumped by hand; the lock file re-pins the hashes:
-    #   sed -i 's/v0.16.0/vX.Y.Z/g' flake.nix && \
-    #     nix flake update spotifast-x86_64-linux spotifast-aarch64-linux
-    #   sed -i 's/1.16.2/X.Y.Z/g' flake.nix && \
-    #     nix flake update packer-x86_64-linux packer-aarch64-linux
+    # Release binaries; packer and rtk are unfree (see modules/profiles/unfree.nix), spotifast is not.
+    # rtk uses releases/latest so `nix flake update` follows it; packer and spotifast carry the version in the URL: bump it, then update those inputs.
     packer-x86_64-linux = {
       url = "file+https://releases.hashicorp.com/packer/1.16.2/packer_1.16.2_linux_amd64.zip";
       flake = false;

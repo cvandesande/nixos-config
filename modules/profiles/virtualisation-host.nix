@@ -6,8 +6,7 @@
       "libvirtd"
     ];
 
-    # Pinned so a lost /var/lib/nixos/auto-subuid-map cannot move the range out from under
-    # files the rootless store owns through it; check /etc/subuid before reusing this line.
+    # Pinned so a lost /var/lib/nixos/auto-subuid-map cannot move the range out from under the rootless store's files; check /etc/subuid before reusing.
     subUidRanges = [
       {
         startUid = 100000;
@@ -28,14 +27,12 @@
   # chattr/lsattr: +C is the only way to set and read NOCOW on a shared btrfs (btrfs(5)).
   environment.systemPackages = [ pkgs.e2fsprogs ];
 
-  # +C: no CoW, to avoid btrfs fragmentation. Mount options cannot do this per subvolume
-  # (btrfs(5)), so the flag is the only way. It covers inodes created after it, never before.
+  # +C: no CoW, to avoid btrfs fragmentation. Mount options cannot do this per subvolume (btrfs(5)), and it covers only inodes created after it.
   systemd.tmpfiles.rules = [
     "d /var/lib/containers/storage - - - - -"
     "h /var/lib/containers/storage - - - - +C"
 
-    # Every level named: tmpfiles makes unmentioned intermediates root-owned and then
-    # refuses the transition, leaving rootless podman unable to open a store.
+    # Every level named: tmpfiles makes unmentioned intermediates root-owned and then refuses the transition, stranding rootless podman.
     "d /home/cvandesande/.local/share/containers 0700 cvandesande users -"
     "d /home/cvandesande/.local/share/containers/storage 0700 cvandesande users -"
     "h /home/cvandesande/.local/share/containers/storage - - - - +C"
@@ -48,8 +45,7 @@
     podman = {
       enable = true;
 
-      # /bin/docker is a symlink to podman, so docs and muscle memory keep working; no
-      # buildx or compose plugin, and a bare `docker run` uses root's store, not the unit's.
+      # /bin/docker symlinks to podman for docs and muscle memory; no buildx or compose, and a bare `docker run` uses root's store, not the unit's.
       dockerCompat = true;
     };
 

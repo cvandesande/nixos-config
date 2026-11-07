@@ -1,21 +1,10 @@
 { pkgs, ... }:
 
-# OpenVINO Model Server (OpenAI-compatible API on 127.0.0.1:8000, /v3/chat/completions),
-# the nomad counterpart of liltig's halogen container. Not started at boot: use llm-start.
-#
-# Qwen3-8B-int4-cw on the NPU with a 32768-token prompt window (first compile takes ~16 min, then cached in /var/cache/openvino-npu-v2) (the NPU graph uses
-# static shapes, so the window is fixed at compile time). Qwen3-30B-A3B-nf4-ov also runs on
-# the NPU but is ~7x slower at this window and needs NPUW_LLM_PREFILL_CHUNK_SIZE=MAX_PROMPT_LEN
-# plus NPUW_MOE_TOKEN_CHUNK_SIZE=1024 (see ~/npu-test).
-# plugin_config must be flat: the DEVICE_PROPERTIES form from the OVMS docs is silently
-# ignored for NPU (window stayed at the 1024 default).
-# Prefix caching reuses the KV of a shared prompt prefix (follow-up turns: 8.6s -> 2.9s at
-# ~5K tokens). The compile cache does not distinguish some NPUW options and can serve a stale
-# blob ("Cannot find tensor for port"), so the cache dir is versioned: bump it when changing them.
-# The graph is mounted over the model dir because OVMS only generates graph.pbtxt
-# when it downloads the model itself.
+# OpenVINO Model Server, the nomad counterpart of liltig's halogen: OpenAI API on 127.0.0.1:8000/v3/chat/completions. Started by llm-start, not at boot.
+# Qwen3-8B-int4-cw on the NPU; Qwen3-30B-A3B-nf4-ov also runs but is ~7x slower here and needs the NPUW prefill/token chunk sizes (see ~/npu-test).
 let
   image = "docker.io/openvino/model_server:latest-gpu"; # GPU image also ships the NPU driver
+  # Mounted over the model dir below: OVMS only generates graph.pbtxt itself when it downloads the model.
   graph = pkgs.writeText "graph.pbtxt" ''
     input_stream: "HTTP_REQUEST_PAYLOAD:input"
     output_stream: "HTTP_RESPONSE_PAYLOAD:output"
@@ -36,6 +25,8 @@ let
         [type.googleapis.com / mediapipe.LLMCalculatorOptions]: {
           models_path: "/model"
           device: "NPU" # change to GPU or CPU to compare
+          # Flat form required (the DEVICE_PROPERTIES form in the OVMS docs is silently ignored for NPU); static shapes fix the window at compile time.
+          # Prefix caching reuses the KV of a shared prompt prefix: 8.6s -> 2.9s on follow-up turns at ~5K tokens. First compile ~16 min.
           plugin_config: '{"MAX_PROMPT_LEN": 32768, "MIN_RESPONSE_LEN": 4096, "NPUW_LLM_ENABLE_PREFIX_CACHING": true}'
         }
       }
@@ -53,8 +44,7 @@ let
   '';
 in
 {
-  # Rootless podman runs this as cvandesande, so the uid is pinned (the oci-containers
-  # module reads it to build RequiresMountsFor) and the user session must outlive the login.
+  # Rootless podman: the oci-containers module reads the uid for RequiresMountsFor, and linger keeps the user session alive.
   users.users.cvandesande = {
     uid = 1000;
     linger = true;
@@ -71,6 +61,7 @@ in
       volumes = [
         "/home/cvandesande/models/Qwen3-8B-int4-cw-ov:/model:ro"
         "${graph}:/graph/graph.pbtxt:ro"
+        # Versioned: the compile cache ignores some NPUW options and can serve a stale blob ("Cannot find tensor for port") -- bump it when they change.
         "/var/cache/openvino-npu-v2:/cache"
       ];
       cmd = [
@@ -86,21 +77,18 @@ in
       extraOptions = [
         "--device=/dev/accel"
         "--device=/dev/dri"
-        # No `--group-add`: renderD128 and accel0 are 0666 here, so rootless needs no gid.
-        # No `--ulimit=memlock` either (see LimitMEMLOCK below).
+        # No --group-add: renderD128 and accel0 are 0666, so rootless needs no gid. No --ulimit=memlock either (see LimitMEMLOCK below).
       ];
     };
   };
 
-  # Inherited by the container, unlike `--ulimit=memlock=-1:-1`, which would pin -1 in the
-  # OCI spec for `podman exec` to fail re-applying from an 8 MB-capped shell (crun EPERM).
+  # Inherited by the container, unlike --ulimit=memlock=-1:-1, which podman exec then fails to re-apply from an 8 MB-capped shell (crun EPERM).
   systemd.services.podman-openvino.serviceConfig.LimitMEMLOCK = "infinity";
 
   # World-writable: the container runs as an unprivileged uid.
   systemd.tmpfiles.rules = [ "d /var/cache/openvino-npu-v2 0777 root root -" ];
 
-  # A root timer cannot see rootless storage, so `pull = "always"` would pile up each
-  # superseded :latest-gpu copy. Dangling images only: named images and volumes survive.
+  # Nothing prunes rootless storage, so pull = "always" piles up each superseded :latest-gpu; dangling images only, named images and volumes survive.
   systemd.user.services.podman-dangling-prune = {
     description = "Remove dangling container images";
     serviceConfig = {

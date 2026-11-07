@@ -8,11 +8,8 @@
 {
   imports = [
     ../../modules/roles/workstation.nix
-    # by-path (PCI slot) rather than by-id: a by-id name is the drive's serial
-    # (vendor OUI + unit number) and this repository is public. Slot names are
-    # stable for a given bay, and Disko is the only consumer — the running system
-    # mounts /dev/disk/by-partlabel/disk-main-* instead. This SATA bay also exposes
-    # an `ata-1.0` alias; both link to the same disk.
+    # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko is the only consumer -- re-run it after moving a drive.
+    # This SATA bay also exposes an `ata-1.0` alias; both link to the same disk.
     (import ../../modules/storage/luks-btrfs.nix {
       device = "/dev/disk/by-path/pci-0000:03:00.0-ata-1";
       swapSize = "16G";
@@ -68,8 +65,7 @@
 
   services.thermald.enable = true;
 
-  # The greeter's kwin only shows the on-screen keyboard on touch/tablet
-  # hardware unless this is set (KDE bug 466948).
+  # The greeter's kwin only shows the on-screen keyboard on touch/tablet hardware unless this is set (KDE bug 466948).
   systemd.user.services.plasma-login-kwin_wayland.environment.KWIN_IM_SHOW_ALWAYS = "1";
 
   workstation.zfs.enable = false;

@@ -1,6 +1,4 @@
-# HashiCorp's official release binary (a static Go binary), taken from the
-# packer-<system> flake inputs. nixpkgs builds packer from source because it is
-# BSL-licensed (unfree, so not in cache.nixos.org).
+# HashiCorp's official release binary, from the packer-<system> flake inputs; nixpkgs builds packer from source because it is BSL (unfree).
 {
   lib,
   stdenvNoCC,

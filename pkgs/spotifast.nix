@@ -1,5 +1,4 @@
-# spotifast release tarball from crmne/spotifast, taken from the
-# spotifast-<system> flake inputs instead of the flake's from-source build.
+# spotifast release tarball from crmne/spotifast, taken from the spotifast-<system> flake inputs instead of the flake's from-source build.
 {
   lib,
   stdenv,

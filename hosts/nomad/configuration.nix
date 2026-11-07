@@ -11,10 +11,7 @@
     inputs.nixos-hardware.nixosModules.framework-intel-core-ultra-series3
     ./openvino.nix
     ../../modules/roles/workstation.nix
-    # by-path (PCI slot) rather than by-id: a by-id name is the drive's serial
-    # (vendor OUI + unit number) and this repository is public. Slot names are
-    # stable for a given bay, and Disko is the only consumer — the running system
-    # mounts /dev/disk/by-partlabel/disk-main-* instead.
+    # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko is the only consumer -- re-run it after moving a drive.
     (import ../../modules/storage/luks-btrfs.nix {
       device = "/dev/disk/by-path/pci-0000:01:00.0-nvme-1";
       swapSize = "16G";
@@ -40,9 +37,7 @@
   # Speaker correction: see INSTALL.md section 10.
   environment.systemPackages = [ pkgs.easyeffects ];
 
-  # Run as a user service rather than XDG autostart: EasyEffects aborts whenever
-  # PipeWire disconnects (e.g. pipewire restarted by `nixos-rebuild switch`), and
-  # XDG autostart units are never restarted.
+  # A user service, not XDG autostart: EasyEffects aborts whenever PipeWire disconnects, and autostart units are never restarted.
   systemd.user.services.easyeffects = {
     description = "Easy Effects";
     wantedBy = [ "graphical-session.target" ];
@@ -65,8 +60,7 @@
 
   workstation.zfs.enable = false;
 
-  # power-profiles-daemon doesn't react to AC changes: pick the profile from
-  # the mains state at boot and whenever the charger is (un)plugged.
+  # power-profiles-daemon ignores AC changes, so the profile is picked from the mains state at boot and on every (un)plug.
   systemd.services.power-profile-auto = {
     description = "Set power profile from AC state";
     after = [ "power-profiles-daemon.service" ];
@@ -85,16 +79,14 @@
     SUBSYSTEM=="power_supply", ATTR{type}=="Mains", TAG+="systemd", ENV{SYSTEMD_WANTS}+="power-profile-auto.service"
   '';
 
-  # KDE writes the charge limit once and never re-applies it (KDE#450551) while the
-  # EC resets it to 100% at boot, so UPower owns it: it re-applies CHARGE_LIMIT.
+  # UPower owns the charge limit: KDE sets it once and never re-applies it (KDE#450551), and the EC resets it to 100% at boot.
   # "_" skips the start threshold, which this battery does not expose.
   services.udev.extraHwdb = ''
     battery:*:FRANEDA:dmi:*
      CHARGE_LIMIT=_,85
   '';
 
-  # UPower only writes the limit while the threshold is enabled (state lives in
-  # /var/lib/upower, so it is re-asserted here to stay declarative).
+  # UPower writes the limit only while the threshold is enabled (state lives in /var/lib/upower), so it is re-asserted here to stay declarative.
   systemd.services.upower-charge-limit = {
     description = "Enable the UPower battery charge limit";
     after = [ "upower.service" ];

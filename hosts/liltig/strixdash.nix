@@ -1,14 +1,10 @@
 { lanIfaces }: # iptables-style name patterns (`en+`) shared with configuration.nix
 { pkgs, lib, ... }:
 
-# strixDash (https://github.com/craiu/strixDash): read-only dashboard for halogen on :8731.
-# UI at http://<liltig>:8787. Upstream has no auth/TLS, so it listens on all addresses but
-# the firewall only opens the port on the lanIfaces NICs (not container bridges, tunnels, etc.).
+# strixDash (https://github.com/craiu/strixDash): read-only halogen dashboard on :8787, no auth or TLS upstream, so the firewall gates it to lanIfaces.
 # Upstream has no LICENSE file, hence fetched at a pinned rev rather than vendored here.
 let
-  # server.py hardcodes the NICs to graph and the unit halogen runs under; point both at this box.
-  # The patterns become name prefixes (`en+` -> `en`), and the traffic panel sums every match,
-  # so it follows whichever NIC is carrying traffic.
+  # server.py hardcodes the NICs to graph and halogen's unit; `en+` becomes a startswith prefix, summed across matches so the graph follows live traffic.
   nicPrefixes = "(${lib.concatMapStringsSep ", " (i: "'${lib.removeSuffix "+" i}'") lanIfaces},)";
   unit = "podman-halogen.service";
 
@@ -16,8 +12,7 @@ let
     mkdir -p $out
     cp -r ${src}/server.py ${src}/web $out/
     chmod -R u+w $out
-    # Engine allocations: read halogen's startup report from journald instead of
-    # `podman logs`, scoped to the current run and re-read after a restart.
+    # Engine allocations: read halogen's startup report from journald, not podman logs, scoped to the current run.
     patch -p1 -d $out < ${./strixdash-journal.patch}
     substituteInPlace $out/server.py \
       --replace-fail "name.strip() in ('eno1', 'ctidao')" "name.strip().startswith(${nicPrefixes})" \

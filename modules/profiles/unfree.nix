@@ -1,10 +1,5 @@
-# All unfree software in one place for review. Nothing here is compiled: nixpkgs
-# repackages the vendors' binaries, and packer/rtk come from release binaries
-# fetched through the flake inputs in flake.nix.
-#
-#   names    allow-list, also used for pkgsUnstable in flake.nix
-#   devTools packer and rtk, plus the allow-list; needed by every host that sets it
-#   desktop  graphical unfree apps; import together with devTools
+# All unfree software in one place for review. Nothing here is compiled: nixpkgs repackages vendor binaries, packer and rtk come from the flake inputs.
+# names is the allow-list (also used for pkgsUnstable); devTools adds packer and rtk; desktop adds the graphical apps on top of devTools.
 let
   names = [
     "discord"

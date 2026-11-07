@@ -6,8 +6,7 @@
 }:
 
 let
-  # Exits 0 when the lid is shut. Builtins only (pam_exec gives no PATH); the
-  # trailing exit 1 is load-bearing, as a for loop that never matches exits 0.
+  # Exits 0 when the lid is shut. Builtins only (pam_exec gives no PATH); the trailing exit 1 is load-bearing.
   lidClosedScript = pkgs.writeShellScript "lid-closed" ''
     for f in /proc/acpi/button/lid/*/state; do
       [ -e "$f" ] || continue
@@ -17,10 +16,8 @@ let
     exit 1
   '';
 
-  # With the lid shut the sensor is unreachable, and pam_fprintd holds a typed
-  # password for its whole timeout until polkit gives up, so a correct password
-  # looks broken: https://bugs.kde.org/show_bug.cgi?id=508342. pam_exec exits 0
-  # -> success=1 skips the pam_fprintd line and goes straight to the password.
+  # Lid shut puts the sensor out of reach and pam_fprintd holds the typed password for its whole timeout: https://bugs.kde.org/show_bug.cgi?id=508342.
+  # pam_exec exits 0, so [success=1] skips the pam_fprintd line and goes straight to the password.
   skipFprintWhenLidClosed = service: {
     # with no fprintd rule to skip, success=1 eats pam_unix and lands on pam_deny
     enable = config.security.pam.services.${service}.rules.auth.fprintd.enable;
@@ -135,9 +132,7 @@ in
   '';
 
   security.pam.services = {
-    # SDDM and Plasma Login Manager both substack `login`, where pam_fprintd runs
-    # first. The greeter never shows its prompt, so a typed password waits out
-    # fprintd's 30 s timeout. sudo and the Plasma lock screen keep fingerprint.
+    # Both greeters substack `login`, where pam_fprintd's missing prompt stalls a typed password for 30 s; sudo and the lock screen keep fingerprint.
     login.fprintAuth = false;
 
     # Keep fingerprint, but skip it when the lid is shut: see the helpers above.
@@ -178,12 +173,10 @@ in
 
     user = {
       services = {
-        # The greeter's kwin already runs with --inputmethod plasma-keyboard.
-        # This unit only runs for the plasmalogin greeter user.
+        # Only for the plasmalogin greeter user; its kwin already runs with --inputmethod plasma-keyboard.
         plasma-login-kwin_wayland = {
           overrideStrategy = "asDropin";
-          # Don't let NixOS inject its minimal PATH into the drop-in: kwin is
-          # told to launch a bare `plasma-keyboard`, found via the system PATH.
+          # No NixOS minimal PATH in the drop-in: kwin launches a bare `plasma-keyboard`, found via the system PATH.
           path = lib.mkForce [ ];
         };
 
@@ -195,8 +188,7 @@ in
           };
         };
 
-        # Store paths in pinned launcher entries go stale on every rebuild and
-        # render as question marks; rewrite them to applications: URIs first.
+        # Store paths in pinned launchers go stale on every rebuild and render as question marks; rewrite them to applications: URIs.
         fix-plasma-pins = {
           description = "Rewrite nix-store launcher pins to applications: URIs";
           wantedBy = [ "plasma-core.target" ];

@@ -1,5 +1,4 @@
-# rtk-oss release binary from rtk-ai/rtk, taken from the rtk-<system> flake
-# inputs instead of building from source.
+# rtk-oss release binary from rtk-ai/rtk, taken from the rtk-<system> flake inputs instead of building from source.
 {
   lib,
   stdenv,
