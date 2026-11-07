@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ pkgs, ... }:
 
 # OpenVINO Model Server (OpenAI-compatible API on 127.0.0.1:8000, /v3/chat/completions),
 # the nomad counterpart of liltig's halogen container. Not started at boot: use llm-start.
@@ -53,12 +53,20 @@ let
   '';
 in
 {
+  # Rootless podman runs this as cvandesande, so the uid is pinned (the oci-containers
+  # module reads it to build RequiresMountsFor) and the user session must outlive the login.
+  users.users.cvandesande = {
+    uid = 1000;
+    linger = true;
+  };
+
   virtualisation.oci-containers = {
-    backend = "docker";
+    backend = "podman";
     containers.openvino = {
       inherit image;
       pull = "always";
       autoStart = false;
+      podman.user = "cvandesande";
       ports = [ "127.0.0.1:8000:8000" ];
       volumes = [
         "/home/cvandesande/models/Qwen3-8B-int4-cw-ov:/model:ro"
@@ -78,21 +86,41 @@ in
       extraOptions = [
         "--device=/dev/accel"
         "--device=/dev/dri"
-        "--group-add=${toString config.users.groups.render.gid}" # image has no render group by name
-        "--ulimit=memlock=-1:-1"
+        # No `--group-add`: renderD128 and accel0 are 0666 here, so rootless needs no gid.
+        # No `--ulimit=memlock` either (see LimitMEMLOCK below).
       ];
     };
   };
 
+  # Inherited by the container, unlike `--ulimit=memlock=-1:-1`, which would pin -1 in the
+  # OCI spec for `podman exec` to fail re-applying from an 8 MB-capped shell (crun EPERM).
+  systemd.services.podman-openvino.serviceConfig.LimitMEMLOCK = "infinity";
+
   # World-writable: the container runs as an unprivileged uid.
   systemd.tmpfiles.rules = [ "d /var/cache/openvino-npu-v2 0777 root root -" ];
 
-  systemd.services.docker.restartIfChanged = false; # a restart kills the container
+  # A root timer cannot see rootless storage, so `pull = "always"` would pile up each
+  # superseded :latest-gpu copy. Dangling images only: named images and volumes survive.
+  systemd.user.services.podman-dangling-prune = {
+    description = "Remove dangling container images";
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = "${pkgs.podman}/bin/podman image prune -f";
+    };
+  };
+  systemd.user.timers.podman-dangling-prune = {
+    wantedBy = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "weekly";
+      RandomizedDelaySec = "4h";
+      Persistent = true; # a laptop is not on when the week turns
+    };
+  };
 
   environment.shellAliases = {
-    llm-start = "systemctl start docker-openvino";
-    llm-stop = "systemctl stop docker-openvino";
-    llm-status = "systemctl is-active docker-openvino";
-    llm-update = "docker pull docker.io/openvino/model_server:latest-gpu";
+    llm-start = "systemctl start podman-openvino";
+    llm-stop = "systemctl stop podman-openvino";
+    llm-status = "systemctl is-active podman-openvino";
+    llm-update = "podman pull docker.io/openvino/model_server:latest-gpu";
   };
 }
