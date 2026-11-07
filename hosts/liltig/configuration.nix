@@ -2,10 +2,10 @@
 
 let
   lib = inputs.nixpkgs.lib;
-  # The guard's two NPU models and its mode, in one attrset so the fetch alias below
-  # cannot drift from the container.
+  # NPU models served beside Flash, plus the guard's mode; one attrset so the
+  # llm-npu-fetch alias below cannot drift from the container.
   npuEnv = {
-    HALOGEN_NPU_MODELS = "halogen-spotter-0.6b,decider-4b";
+    HALOGEN_NPU_MODELS = "halogen-spotter-0.6b,decider-4b,flux2-klein-4b";
     HALOGEN_AGENT_GUARD = "watch";
   };
   npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
@@ -66,6 +66,9 @@ in
         HALOGEN_CACHE_BRANCHES = "3";
         HALOGEN_KV8 = "1";
         HALOGEN_KV_POOL_POSITIONS = "925184";
+        # Accept image content: loads the 857 MB vision tower that sits beside the
+        # checkpoint. Unset, an image is a 400 and text behaviour is bit-identical.
+        HALOGEN_VISION_TOWER = "1";
       };
       extraOptions = [
         "--device=/dev/kfd"
