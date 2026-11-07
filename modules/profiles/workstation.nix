@@ -23,8 +23,10 @@
 
     hardware.enableRedistributableFirmware = true;
 
+    # wl-clipboard: pi (and other CLI tools) shell out to wl-copy/wl-paste; KDE does not pull it in.
     environment.systemPackages = [
       pkgs.nvd
+      pkgs.wl-clipboard
     ]
     ++ lib.optional config.workstation.zfs.enable config.boot.zfs.package;
 
