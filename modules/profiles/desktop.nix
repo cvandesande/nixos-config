@@ -1,6 +1,40 @@
-{ lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
+  # Exits 0 when the lid is shut. Builtins only (pam_exec gives no PATH); the
+  # trailing exit 1 is load-bearing, as a for loop that never matches exits 0.
+  lidClosedScript = pkgs.writeShellScript "lid-closed" ''
+    for f in /proc/acpi/button/lid/*/state; do
+      [ -e "$f" ] || continue
+      read -r line < "$f"
+      case "$line" in *closed*) exit 0 ;; esac
+    done
+    exit 1
+  '';
+
+  # With the lid shut the sensor is unreachable, and pam_fprintd holds a typed
+  # password for its whole timeout until polkit gives up, so a correct password
+  # looks broken: https://bugs.kde.org/show_bug.cgi?id=508342. pam_exec exits 0
+  # -> success=1 skips the pam_fprintd line and goes straight to the password.
+  skipFprintWhenLidClosed = service: {
+    # with no fprintd rule to skip, success=1 eats pam_unix and lands on pam_deny
+    enable = config.security.pam.services.${service}.rules.auth.fprintd.enable;
+    # -10, not -100: built-in orders sit on a 100 grid, so -100 is the p9 slot
+    order = config.security.pam.services.${service}.rules.auth.fprintd.order - 10;
+    control = "[success=1 default=ignore]";
+    modulePath = "${pkgs.linux-pam}/lib/security/pam_exec.so";
+    # quiet has to precede the script: pam_exec stops parsing options there
+    args = [
+      "quiet"
+      "${lidClosedScript}"
+    ];
+  };
+
   notifyRebootRequired = pkgs.writeShellScript "notify-reboot-required" ''
         set -eu
 
@@ -100,10 +134,16 @@ in
     NumLock=0
   '';
 
-  # SDDM and Plasma Login Manager both substack `login`, where pam_fprintd runs
-  # first. The greeter never shows its prompt, so a typed password waits out
-  # fprintd's 30 s timeout. sudo and the Plasma lock screen keep fingerprint.
-  security.pam.services.login.fprintAuth = false;
+  security.pam.services = {
+    # SDDM and Plasma Login Manager both substack `login`, where pam_fprintd runs
+    # first. The greeter never shows its prompt, so a typed password waits out
+    # fprintd's 30 s timeout. sudo and the Plasma lock screen keep fingerprint.
+    login.fprintAuth = false;
+
+    # Keep fingerprint, but skip it when the lid is shut: see the helpers above.
+    polkit-1.rules.auth.lid-check = skipFprintWhenLidClosed "polkit-1";
+    sudo.rules.auth.lid-check = skipFprintWhenLidClosed "sudo";
+  };
 
   # i2c-dev + /dev/i2c-* so Plasma/KWin can set external monitor brightness over DDC/CI.
   users.users.cvandesande.extraGroups = [ "i2c" ];
