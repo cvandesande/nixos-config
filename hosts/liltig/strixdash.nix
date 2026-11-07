@@ -3,7 +3,7 @@
 
 # strixDash (https://github.com/craiu/strixDash): read-only dashboard for halogen on :8731.
 # UI at http://<liltig>:8787. Upstream has no auth/TLS, so it listens on all addresses but
-# the firewall only opens the port on the lanIfaces NICs (not docker bridges, tunnels, etc.).
+# the firewall only opens the port on the lanIfaces NICs (not container bridges, tunnels, etc.).
 # Upstream has no LICENSE file, hence fetched at a pinned rev rather than vendored here.
 let
   # server.py hardcodes the NICs to graph and the unit halogen runs under; point both at this box.

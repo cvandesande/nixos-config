@@ -49,12 +49,13 @@ let
             mountOptions = btrfsMountOptions;
           };
 
-          "@docker" = {
-            mountpoint = "/var/lib/docker";
+          # Podman's rootful store, which would otherwise land on @. CoW comes off per inode
+          # with chattr +C; btrfs(5) has no per-subvolume nodatacow.
+          "@containers" = {
+            mountpoint = "/var/lib/containers/storage";
             mountOptions = [
               "noatime"
               "discard=async"
-              "nodatacow"
             ];
           };
 

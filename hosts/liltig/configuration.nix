@@ -119,13 +119,7 @@ in
     allowedTCPPorts = [ 8731 ];
   });
 
-  # Docker stays for project-code-intelligence's compose stack and buildx.
-  virtualisation.docker.autoPrune = {
-    enable = true;
-    dates = "weekly";
-  };
-
-  # That root timer cannot see rootless storage, so `pull = "always"` would pile up each
+  # Nothing prunes rootless storage for you, so `pull = "always"` would pile up each
   # superseded :latest copy. Dangling images only: named images and volumes must survive.
   systemd.user.services.podman-dangling-prune = {
     description = "Remove dangling container images";
@@ -142,8 +136,6 @@ in
       Persistent = true;
     };
   };
-
-  systemd.services.docker.restartIfChanged = false; # a restart kills the container
 
   environment.shellAliases = {
     llm-start = "systemctl start podman-halogen";

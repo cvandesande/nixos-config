@@ -3,7 +3,6 @@
 {
   users.users.cvandesande = {
     extraGroups = [
-      "docker"
       "libvirtd"
     ];
 
@@ -26,11 +25,14 @@
   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];
   boot.binfmt.preferStaticEmulators = true;
 
-  # +C: no CoW, to avoid btrfs fragmentation. Created here so the flag applies.
-  # The rootless store lives in the user's home, so it needs the same treatment.
+  # chattr/lsattr: +C is the only way to set and read NOCOW on a shared btrfs (btrfs(5)).
+  environment.systemPackages = [ pkgs.e2fsprogs ];
+
+  # +C: no CoW, to avoid btrfs fragmentation. Mount options cannot do this per subvolume
+  # (btrfs(5)), so the flag is the only way. It covers inodes created after it, never before.
   systemd.tmpfiles.rules = [
-    "d /var/lib/docker 0711 root root -"
-    "h /var/lib/docker - - - - +C"
+    "d /var/lib/containers/storage - - - - -"
+    "h /var/lib/containers/storage - - - - +C"
 
     "d /home/cvandesande/.local/share/containers/storage 0700 cvandesande users -"
     "h /home/cvandesande/.local/share/containers/storage - - - - +C"
@@ -40,12 +42,13 @@
   ];
 
   virtualisation = {
-    docker = {
+    podman = {
       enable = true;
-      storageDriver = "btrfs";
-    };
 
-    podman.enable = true;
+      # /bin/docker is a symlink to podman, so docs and muscle memory keep working; no
+      # buildx or compose plugin, and a bare `docker run` uses root's store, not the unit's.
+      dockerCompat = true;
+    };
 
     libvirtd = {
       enable = true;
