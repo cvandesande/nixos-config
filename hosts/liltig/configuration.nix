@@ -10,12 +10,19 @@ let
   };
   npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
 
-  # Where halogen may be reached: any ethernet or wifi NIC (`+` is iptables' name-prefix
-  # wildcard), so moving between the USB dongle, the onboard port and wifi needs no edit.
-  # Docker bridges, veths and tunnels are not listed, so they are refused.
+  # Interfaces allowed to reach halogen (:8731) and strixDash (:8787). Neither has auth,
+  # so this names this box's NICs instead of the `en+`/`wl+` wildcards: those admitted any
+  # interface named en*, which includes a USB dock on an untrusted network and any tunnel
+  # that names itself enp*. Unlisted names are refused, so new hardware means adding its
+  # name here (fail closed). The USB dongle's name is <controller PCI function> plus its
+  # USB topology (`enp196s0f3u1u2`), so it is matched as a prefix: that survives a replug
+  # to another port on the same controller, but a port wired to a different controller
+  # renames it (`enp<other>s0f3u…`) and needs a new entry. Docker bridges, veths and
+  # tunnels stay refused by omission.
   lanIfaces = [
-    "en+"
-    "wl+"
+    "enp191s0" # onboard ethernet
+    "enp196s0+" # USB-C ethernet dongle; trailing `+` is iptables prefix matching
+    "wlp192s0" # wifi
   ];
   # Docker DNATs published ports straight into FORWARD, past the firewall's INPUT chain, so
   # networking.firewall.interfaces cannot gate them. DOCKER-USER runs first in FORWARD. The
