@@ -33,8 +33,13 @@ in
     ./claude-router.nix
     (import ./strixdash.nix { inherit lanIfaces; })
     ../../modules/roles/workstation.nix
+    # by-path (PCI slot) rather than by-id: a by-id name is the drive's serial
+    # (vendor OUI + unit number) and this repository is public. Slot names are
+    # stable for a given bay, and Disko is the only consumer — the running system
+    # mounts /dev/disk/by-partlabel/disk-main-* instead. Re-run Disko after a drive
+    # move with the new path.
     (import ../../modules/storage/luks-btrfs.nix {
-      device = "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4086d232";
+      device = "/dev/disk/by-path/pci-0000:c1:00.0-nvme-1";
       swapSize = "32G";
     })
   ];

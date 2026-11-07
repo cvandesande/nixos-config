@@ -11,8 +11,12 @@
     inputs.nixos-hardware.nixosModules.framework-intel-core-ultra-series3
     ./openvino.nix
     ../../modules/roles/workstation.nix
+    # by-path (PCI slot) rather than by-id: a by-id name is the drive's serial
+    # (vendor OUI + unit number) and this repository is public. Slot names are
+    # stable for a given bay, and Disko is the only consumer — the running system
+    # mounts /dev/disk/by-partlabel/disk-main-* instead.
     (import ../../modules/storage/luks-btrfs.nix {
-      device = "/dev/disk/by-id/nvme-eui.e8238fa6bf530001001b448b4f03f482";
+      device = "/dev/disk/by-path/pci-0000:01:00.0-nvme-1";
       swapSize = "16G";
     })
   ];
@@ -33,7 +37,7 @@
   # Unused here; avoids the "supply vcc not found" probe message at boot.
   boot.blacklistedKernelModules = [ "spi_nor" ];
 
-  # Speaker correction: see README section 10.
+  # Speaker correction: see INSTALL.md section 10.
   environment.systemPackages = [ pkgs.easyeffects ];
 
   # Run as a user service rather than XDG autostart: EasyEffects aborts whenever
