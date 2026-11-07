@@ -31,6 +31,10 @@
     htop
     openssl
     jq
+    # marksman (markdown language server) deliberately NOT installed: it keeps
+    # crashing on this setup, so pi-lens reports README.md/INSTALL.md as
+    # "incomplete, not clean" on every markdown write. Accepted for now; do not
+    # re-add it expecting working markdown diagnostics until it stabilises.
     scrcpy
     sops
     tio
