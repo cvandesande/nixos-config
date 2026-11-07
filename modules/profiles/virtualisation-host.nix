@@ -34,6 +34,9 @@
     "d /var/lib/containers/storage - - - - -"
     "h /var/lib/containers/storage - - - - +C"
 
+    # Every level named: tmpfiles makes unmentioned intermediates root-owned and then
+    # refuses the transition, leaving rootless podman unable to open a store.
+    "d /home/cvandesande/.local/share/containers 0700 cvandesande users -"
     "d /home/cvandesande/.local/share/containers/storage 0700 cvandesande users -"
     "h /home/cvandesande/.local/share/containers/storage - - - - +C"
 
