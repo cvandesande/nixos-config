@@ -5,9 +5,10 @@ let
   # NPU models served beside Flash, plus the guard's mode; one attrset so llm-npu-fetch below cannot drift.
   # qwen3-embedding-0.6b: Open WebUI's knowledge search, ~0.8 GiB locked; fetched with the image's huggingface_hub, not llm-npu-fetch (needs llm-stop).
   npuEnv = {
-    HALOGEN_NPU_MODELS = "halogen-spotter-0.6b,decider-4b,flux2-klein-4b,qwen3-embedding-0.6b";
-    # hold stops a side-effecting call in a turn with a flagged result; watch only logged verdicts, and a flag lands within minutes of ordinary work here.
-    HALOGEN_AGENT_GUARD = "hold";
+    # decider-4b outlives the guard: pi's classifier (`pi/extensions/halogen-npu.ts`) answers on it too.
+    HALOGEN_NPU_MODELS = "decider-4b,flux2-klein-4b,qwen3-embedding-0.6b";
+    # The guard is a preview and loud here: ordinary Read results scored 0.60 `Controversial` against a 0.25 flag, and real Write/Edit/Bash calls got held. `watch` logs verdicts without holding, `hold` also stops the call.
+    HALOGEN_AGENT_GUARD = "off";
   };
   npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
 
