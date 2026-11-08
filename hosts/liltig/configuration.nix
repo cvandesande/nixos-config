@@ -6,9 +6,16 @@ let
   # qwen3-embedding-0.6b: Open WebUI's knowledge search, ~0.8 GiB locked; fetched with the image's huggingface_hub, not llm-npu-fetch (needs llm-stop).
   npuEnv = {
     HALOGEN_NPU_MODELS = "halogen-spotter-0.6b,decider-4b,flux2-klein-4b,qwen3-embedding-0.6b";
-    HALOGEN_AGENT_GUARD = "watch";
+    # hold stops a side-effecting call in a turn with a flagged result; watch only logged verdicts, and a flag lands within minutes of ordinary work here.
+    HALOGEN_AGENT_GUARD = "hold";
   };
   npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
+
+  # Request records audit those flags -- the guard's log line gives a tool name, a byte count and a score, never the text.
+  recordDir = "/home/cvandesande/.local/share/halogen-records";
+
+  # The checkpoint volume, read-only at /models; the two paths halogen itself writes get a narrow read-write mount below.
+  modelsDir = "/home/cvandesande/models/halogen-qwen3.8-flash-next";
 
   # None of halogen (:8731), strixDash (:8787) or Open WebUI (:8788) has a network gate, so these NICs are the gate.
   # Named NICs, not `en+`/`wl+` wildcards, and anything unlisted is refused; the trailing `+` is a prefix, so the USB dongle survives a replug.
@@ -64,6 +71,12 @@ in
     linger = true;
   };
 
+  # Both levels named, as with Open WebUI's dir: tmpfiles makes an unmentioned intermediate root-owned, then refuses the transition.
+  systemd.tmpfiles.rules = [
+    "d /home/cvandesande/.local/share 0700 cvandesande users -"
+    "d ${recordDir} 0700 cvandesande users -"
+  ];
+
   virtualisation.oci-containers = {
     backend = "podman";
     containers.halogen = {
@@ -72,8 +85,19 @@ in
       autoStart = false;
       podman.user = "cvandesande";
       ports = [ "8731:8731" ]; # all addresses; the firewall rules below limit it to the LAN NIC
-      volumes = [ "/home/cvandesande/models/halogen-qwen3.8-flash-next:/models:ro" ];
+      volumes = [
+        "${modelsDir}:/models:ro"
+        # Nested over that mount: halogen writes <dir>/halogen-npu.hnpw for an own checkpoint and fetches programs under npu/,
+        # and it re-does the conversion after an update that invalidates it -- writable here means a plain restart suffices.
+        "${modelsDir}/OvisOCR3:/models/OvisOCR3"
+        "${modelsDir}/npu:/models/npu"
+        # Writable, unlike /models: one JSON line per finished request, and a full store drops records rather than blocking one.
+        "${recordDir}:/records"
+      ];
       environment = npuEnv // {
+        # Only the text the guard judges: with no API key on this port, prompts, replies and thinking stay out.
+        HALOGEN_RECORD_DIR = "/records";
+        HALOGEN_RECORD_TEXT = "results,args";
         HALOGEN_TEMPERATURE = "1.0";
         HALOGEN_TOP_P = "0.95";
         HALOGEN_TOP_K = "20";
@@ -126,7 +150,11 @@ in
     llm-status = "systemctl is-active podman-halogen";
     llm-update = "podman pull ghcr.io/peonist-ai/halogen-flash-server:latest";
     # One-off NPU model fetch: needs a writable mount (runtime is :ro), the clock pinned, and llm-stop first; Ctrl-C once the files land.
-    llm-npu-fetch = "podman run --rm -v /home/cvandesande/models/halogen-qwen3.8-flash-next:/models -e HALOGEN_DOWNLOAD=peonist-ai/halogen-qwen3.8-flash-next ${npuEnvArgs} --device=/dev/kfd --device=/dev/dri --device=/dev/accel/accel0 --ipc=host ghcr.io/peonist-ai/halogen-flash-server:latest";
+    llm-npu-fetch = "podman run --rm -v ${modelsDir}:/models -e HALOGEN_DOWNLOAD=peonist-ai/halogen-qwen3.8-flash-next ${npuEnvArgs} --device=/dev/kfd --device=/dev/dri --device=/dev/accel/accel0 --ipc=host ghcr.io/peonist-ai/halogen-flash-server:latest";
+    # Newest first: turns/<UTC day>/<host>-<pid>-<ms>.jsonl, one request a line, plain JSON -- jq it.
+    llm-records = "ls -1t ${recordDir}/turns/*/*.jsonl 2>/dev/null | head -3";
+    # Store counters plus today's guard flags: curl -s localhost:8731/health | jq .request_records for the store alone.
+    llm-guard = "curl -s localhost:8731/health | python3 -m json.tool | grep -A6 request_records; journalctl -u podman-halogen --since today --no-pager | grep 'agent guard' | tail -20";
   };
 
   fileSystems."/home/cvandesande/mnt/whiterock" = {
