@@ -104,11 +104,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1794051415,
-        "narHash": "sha256-mJok3uMK0awq2MPKdSnvTxm3UD89KD3LclQzASgtY1s=",
+        "lastModified": 1794222723,
+        "narHash": "sha256-jehPADpSIsWnyNHw/s44OHF9l6Y75QmW74sqO9cEe0A=",
         "owner": "NixOS",
         "repo": "nixos-hardware",
-        "rev": "1a8ff4f57ffe1f732beaa1db842247a381ea471d",
+        "rev": "919c16cf46a7acf9b44b2c2444bc39aa094eaa85",
         "type": "github"
       },
       "original": {
@@ -136,11 +136,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1793876309,
-        "narHash": "sha256-Wojg9lIH/hDH91iDVH2/EPw8oDSpxjxhXONbU1yf4Zg=",
+        "lastModified": 1794042290,
+        "narHash": "sha256-ziZn2PvCJE5JEEpqTdxXwJpPB+L3YqoCpTAMCzyaP3U=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f9a75f41be3a74eab55d3a7679d34ad6cc0da977",
+        "rev": "f4a03c008967841f2a0b3cb7c436fc6fc31671f6",
         "type": "github"
       },
       "original": {
@@ -215,7 +215,7 @@
     "rtk-aarch64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-lRvT8dL20/1yL2Z971+87sT78CjIkhNEY6sJezKAqcQ=",
+        "narHash": "sha256-I8RZfXkxl+yywyH/RWDbstobkjI8BDm7ntkHXyZTOPU=",
         "type": "file",
         "url": "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-oss-aarch64-unknown-linux-gnu.tar.gz"
       },
@@ -227,7 +227,7 @@
     "rtk-x86_64-linux": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-D7uXFUU9J+6rzehh3gPXjc6hWXpg4ASkS06I7yFvwic=",
+        "narHash": "sha256-6XkkMlBQG2WEgVeble7ZslPwCxqc40ggJ8F4pfXr3Ys=",
         "type": "file",
         "url": "https://github.com/rtk-ai/rtk/releases/latest/download/rtk-oss-x86_64-unknown-linux-musl.tar.gz"
       },
