@@ -96,30 +96,40 @@ class Handler(BaseHTTPRequestHandler):
     def adapt_local(body):
         """Claude Code puts role="system" messages inside `messages`, which the
         Anthropic API accepts but many chat templates (Qwen's included) reject
-        unless the system message comes first. Hoist them into the top-level
-        `system` field. Returns (body, number hoisted); the body is untouched
-        when there is nothing to hoist."""
+        unless the system message comes first. Leading ones are hoisted into the
+        top-level `system` field. Later ones become role="user" where they stand:
+        hoisting them would grow `system` mid-conversation and shift every token
+        after it, so halogen re-prefilled the whole history on each new one.
+        Returns (body, number hoisted, number converted); the body is untouched
+        when there is nothing to change."""
         try:
             data = json.loads(body)
             msgs = data["messages"]
-            hoisted = [m for m in msgs if isinstance(m, dict) and m.get("role") == "system"]
+            is_sys = [isinstance(m, dict) and m.get("role") == "system" for m in msgs]
         except (ValueError, KeyError, TypeError):
-            return body, 0
-        if not hoisted:
-            return body, 0
+            return body, 0, 0
+        lead = 0
+        while lead < len(msgs) and is_sys[lead]:
+            lead += 1
+        # An empty system entry (Claude Code's per-turn effort marker) says nothing, and an empty user message would be rejected.
+        later = [(m, s) for m, s in zip(msgs[lead:], is_sys[lead:]) if not (s and not m.get("content"))]
+        converted = sum(s for _, s in later)
+        if not lead and len(later) == len(msgs) - lead and not converted:
+            return body, 0, 0
         blocks = []
-        for m in hoisted:
+        for m in msgs[:lead]:
             c = m.get("content")
             if isinstance(c, str):
                 blocks.append({"type": "text", "text": c})
             elif isinstance(c, list):
                 blocks.extend(c)
-        sysf = data.get("system")
-        if isinstance(sysf, str):
-            sysf = [{"type": "text", "text": sysf}]
-        data["system"] = (sysf or []) + blocks
-        data["messages"] = [m for m in msgs if m not in hoisted]
-        return json.dumps(data).encode(), len(hoisted)
+        if lead:
+            sysf = data.get("system")
+            if isinstance(sysf, str):
+                sysf = [{"type": "text", "text": sysf}]
+            data["system"] = (sysf or []) + blocks
+        data["messages"] = [dict(m, role="user") if s else m for m, s in later]
+        return json.dumps(data).encode(), lead, converted
 
     # -- proxying ----------------------------------------------------------
     def proxy(self):
@@ -136,9 +146,11 @@ class Handler(BaseHTTPRequestHandler):
                          f"{kind} {backend.url} id={req_id}\n")
 
         if kind == "LOCAL":
-            body, hoisted = self.adapt_local(body)
+            body, hoisted, converted = self.adapt_local(body)
             if hoisted:
                 sys.stderr.write(f"hoisted {hoisted} system message(s) into `system`\n")
+            if converted:
+                sys.stderr.write(f"converted {converted} system message(s) to user in place\n")
 
         headers = {}
         for k, v in self.headers.items():

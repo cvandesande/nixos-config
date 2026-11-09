@@ -166,19 +166,45 @@ class RouterTests(unittest.TestCase):
         self.assertEqual(seen["Host"], f"127.0.0.1:{self.default.server_port}")
         self.assertEqual(r.getheader("X-Upstream-Host"), seen["Host"])
 
-    def test_system_messages_hoisted_for_local_only(self):
+    def test_system_messages_adapted_for_local_only(self):
         body = {"model": "qwen-x", "system": [{"type": "text", "text": "S0"}],
-                "messages": [{"role": "user", "content": "hi"},
+                "messages": [{"role": "system", "content": "L1"},
+                             {"role": "user", "content": "hi"},
                              {"role": "system", "content": [{"type": "text", "text": "S1"}]},
                              {"role": "system", "content": "S2"}]}
         self.post("/v1/messages", body)
         sent = json.loads(self.local.seen[0][3])
-        self.assertEqual([m["role"] for m in sent["messages"]], ["user"])
-        self.assertEqual([b["text"] for b in sent["system"]], ["S0", "S1", "S2"])
+        # The leading one is hoisted; later ones stay where they stand, as user messages.
+        self.assertEqual([m["role"] for m in sent["messages"]], ["user", "user", "user"])
+        self.assertEqual([b["text"] for b in sent["system"]], ["S0", "L1"])
+        self.assertEqual(sent["messages"][1]["content"], [{"type": "text", "text": "S1"}])
+        self.assertEqual(sent["messages"][2]["content"], "S2")
         body["model"] = "claude-x"
         raw = json.dumps(body).encode()
         self.post("/v1/messages", None, raw_body=raw)
         self.assertEqual(self.default.seen[0][3], raw)  # byte-identical
+
+    def test_new_system_message_leaves_earlier_prompt_untouched(self):
+        """A system message appearing mid-conversation must not change `system` or any
+        earlier message, or halogen's prompt cache re-prefills the whole history."""
+        a = {"role": "assistant", "content": [{"type": "tool_use", "id": "t1", "name": "Bash", "input": {}}]}
+        r = {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "ok"}]}
+        turn1 = [{"role": "user", "content": "go"}, {"role": "system", "content": "R1"}, a, r]
+        turn2 = turn1 + [{"role": "system", "content": "R2"}, {"role": "user", "content": "more"}]
+        for msgs in (turn1, turn2):
+            self.post("/v1/messages", {"model": "qwen-x", "system": [{"type": "text", "text": "S0"}],
+                                       "messages": msgs})
+        one, two = (json.loads(self.local.seen[i][3]) for i in (0, 1))
+        self.assertEqual(one["system"], two["system"])
+        self.assertEqual(two["messages"][:len(one["messages"])], one["messages"])
+
+    def test_empty_system_message_is_dropped_not_sent_as_empty_user(self):
+        body = {"model": "qwen-x", "messages": [{"role": "user", "content": "hi"},
+                                                {"role": "system", "content": []},
+                                                {"role": "system", "content": ""}]}
+        self.post("/v1/messages", body)
+        sent = json.loads(self.local.seen[0][3])
+        self.assertEqual(sent["messages"], [{"role": "user", "content": "hi"}])
 
     def test_local_body_without_system_messages_untouched(self):
         raw = b'{"model":  "qwen-x",   "messages":[{"role":"user","content":"hi"}]}'
@@ -348,6 +374,7 @@ class HoistLogTests(unittest.TestCase):
                         time.sleep(0.1)
                 plain = {"model": "qwen-x", "messages": [{"role": "user", "content": "hi"}]}
                 hoist = {"model": "qwen-x", "messages": [
+                    {"role": "system", "content": "L1"},
                     {"role": "user", "content": "hi"},
                     {"role": "system", "content": "S1"},
                     {"role": "system", "content": "S2"}]}
@@ -361,8 +388,9 @@ class HoistLogTests(unittest.TestCase):
                 proc.wait()
             log.seek(0)
             lines = log.read().decode().splitlines()
-        hoisted = [l for l in lines if l.startswith("hoisted")]
-        self.assertEqual(hoisted, ["hoisted 2 system message(s) into `system`"], lines)
+        logged = [l for l in lines if l.startswith(("hoisted", "converted"))]
+        self.assertEqual(logged, ["hoisted 1 system message(s) into `system`",
+                                  "converted 2 system message(s) to user in place"], lines)
 
 
 class WatcherQuietTests(unittest.TestCase):
