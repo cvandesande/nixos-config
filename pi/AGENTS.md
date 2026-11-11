@@ -16,5 +16,9 @@ A `bash` tool call may be rewritten to its `rtk` equivalent (`cat` -> `rtk read`
   command itself is broken.
 - Result counts can be capped by `limits.grep_max_results` and
   `grep_max_per_file`.
+- Only the commands named above are rewritten. Everything else (`journalctl`,
+  `dmesg`, `systemctl`, `curl`, …) runs raw: do not attribute their output or
+  defaults to rtk. Prove it before blaming it — invoke the binary by absolute
+  path, which cannot be rewritten, and compare.
 - Rewriting is the extension's job, not yours: keep typing plain commands, and
   use `rtk gain` to see what it saved.

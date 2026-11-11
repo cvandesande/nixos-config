@@ -40,8 +40,10 @@ level = "high"
 [limits]
 grep_max_results = 200
 grep_max_per_file = 25
-status_max_files = 15
-status_max_untracked = 10
+# A git status that hides changed files is worse than a verbose one: an agent that never sees
+# the 16th changed file never stages it. Same trap for untracked paths, so both raised.
+status_max_files = 50
+status_max_untracked = 25
 passthrough_max_chars = 2000
 
 [retriever]
