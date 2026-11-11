@@ -1,0 +1,50 @@
+[tracking]
+enabled = true
+history_days = 90
+
+[display]
+colors = true
+emoji = true
+max_width = 120
+
+[filters]
+ignore_dirs = [
+    ".git",
+    "node_modules",
+    "target",
+    "__pycache__",
+    ".venv",
+    "vendor",
+]
+ignore_files = [
+    "*.lock",
+    "*.min.js",
+    "*.min.css",
+]
+
+[telemetry]
+enabled = true
+consent_given = true
+consent_date = "2026-08-04T15:52:56.606500970+00:00"
+
+[hooks]
+# The search family: 40% of rewrites but under 5% of tokens saved, and the wrappers misparsed
+# flags here (--include=*, -rn) while the 200/25 result caps clipped hits without saying so.
+exclude_commands = ["grep", "rg", "find"]
+transparent_prefixes = []
+
+[awareness]
+# Tell agents what RTK is and how to opt out (RTK_DISABLED=1, rtk bypass); pi reads the note in ~/.pi/agent/AGENTS.md.
+level = "high"
+
+[limits]
+grep_max_results = 200
+grep_max_per_file = 25
+status_max_files = 15
+status_max_untracked = 10
+passthrough_max_chars = 2000
+
+[retriever]
+mode = "sqlite"
+tee_max_files = 20
+tee_max_file_size = 1048576

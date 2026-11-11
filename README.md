@@ -25,6 +25,7 @@ The shared Disko layouts live in:
 modules/storage/luks-btrfs.nix
 modules/storage/ext4-simple.nix
 ```
+
 Each host's `configuration.nix` imports one of these layouts and supplies only
 its target disk.
 During install, set `HOST` to the target being installed. After booting the
@@ -34,9 +35,9 @@ Host roles:
 
 | Host | Role | Storage | Desktop |
 | --- | --- | --- | --- |
-| `liltig` | Workstation/virtualisation host | LUKS + Btrfs + swap | KDE Plasma |
-| `nuc` | Workstation | LUKS + Btrfs + swap | KDE Plasma |
-| `nomad` | Laptop workstation (Framework 13 Pro) | LUKS + Btrfs + swap | KDE Plasma |
+| `liltig` | Workstation/virtualisation host | LUKS/Btrfs/swap | KDE Plasma |
+| `nuc` | Workstation | LUKS/Btrfs/swap | KDE Plasma |
+| `nomad` | Laptop (Framework 13 Pro) | LUKS/Btrfs/swap | KDE Plasma |
 | `nix-vm-x86_64` | Headless development VM | Plain ext4 | None |
 | `nix-vm-aarch64` | Headless development VM | Plain ext4 | None |
 
@@ -76,11 +77,19 @@ The shareable part of Pi's user config is tracked in `pi/` and symlinked into
 `~/.pi/agent`, so Pi can edit its own config and the change shows up in
 `git diff` for you to commit later:
 
-| Repo path | Linked to | Notes |
-|---|---|---|
-| `pi/settings.json` | `~/.pi/agent/settings.json` | Pi rewrites this file itself: `lastChangelogVersion` and `extensionChangelogVersions` move on their own, so expect churn in `git diff`. |
-| `pi/models.json` | `~/.pi/agent/models.json` | halogen on `liltig:8731` (reachable from any LAN host) and OpenVINO on `127.0.0.1:8000` (nomad's own NPU). Both `apiKey` fields are dummies — see below. |
-| `pi/extensions/halogen-npu.ts` | `~/.pi/agent/extensions/halogen-npu.ts` | flux2 image and decider classifier models on the NPU. Honours `HALOGEN_BASE` if a host must point elsewhere. |
+- `pi/settings.json` → `~/.pi/agent/settings.json`. Pi rewrites this file
+  itself: `lastChangelogVersion` and `extensionChangelogVersions` move on their
+  own, so expect churn in `git diff`.
+- `pi/models.json` → `~/.pi/agent/models.json`. halogen on `liltig:8731`
+  (reachable from any LAN host) and OpenVINO on `127.0.0.1:8000` (nomad's own
+  NPU). Both `apiKey` fields are dummies — see below.
+- `pi/AGENTS.md` → `~/.pi/agent/AGENTS.md`. Instructions Pi loads in every
+  project. One section so far: `rtk` condenses some bash output, so a short
+  result is recovered with `rtk recall` rather than by trusting it. Its own
+  settings stay untracked in `~/.config/rtk/config.toml`.
+- `pi/extensions/halogen-npu.ts` → `~/.pi/agent/extensions/halogen-npu.ts`.
+  flux2 image and decider classifier models on the NPU. Honours `HALOGEN_BASE`
+  if a host must point elsewhere.
 
 `models.json` is tracked, so it must never carry a real key. Pi keeps real
 credentials in the untracked `auth.json`, and the `apiKey` fields here are
@@ -104,10 +113,12 @@ Secrets are never in the repo (it is public). They live in `~/.secrets/pi`
 (directory 700, files 600); `mcp.json` is linked from there because that is where
 Pi looks for it, and `kagi.key` is read in place by a header command:
 
-| Secret | Why it cannot be tracked |
-|---|---|
-| `mcp.json` | The Home Assistant token is inside the server `url`, and MCP `url` values get no `${VAR}` or `!command` substitution (only `env` and `headers` values do). `/mcp` also saves enable/disable and tool-exposure changes back into this file. Template: `pi/mcp.json.example`. |
-| `kagi.key` | Kagi MCP key, read through `"!echo Bearer $(cat $HOME/.secrets/pi/kagi.key)"`. |
+- `mcp.json` — the Home Assistant token is inside the server `url`, and MCP
+  `url` values get no `${VAR}` or `!command` substitution (only `env` and
+  `headers` values do). `/mcp` also saves enable/disable and tool-exposure
+  changes back into this file. Template: `pi/mcp.json.example`.
+- `kagi.key` — Kagi MCP key, read through
+  `"!echo Bearer $(cat $HOME/.secrets/pi/kagi.key)"`.
 
 Everything per-host and regenerable stays in `~/.pi/agent` untracked: `install/`
 (Pi's self-updating release plus its own `rg`), `npm/node_modules` (`settings.json`
@@ -119,16 +130,18 @@ and the `~/.local/bin/pi` symlink) and cloning this repo:
 
 ```bash
 # 1. Secrets first. On a host that already had its own settings.json, models.json
-#    or mcp.json, move those out of the agent directory now: `ln -sfn` replaces a
-#    regular file silently and nothing here backs it up.
+#    or mcp.json, move those out of the agent directory now: `ln -sfn` replaces
+#    a regular file silently and nothing here backs it up.
 mkdir -p ~/.pi/agent/extensions ~/.secrets/pi && chmod 700 ~/.secrets/pi
-cp ~/nixos-config/pi/mcp.json.example ~/.secrets/pi/mcp.json   # then fill in the token
+# then fill in the token
+cp ~/nixos-config/pi/mcp.json.example ~/.secrets/pi/mcp.json
 printf '%s\n' "$KAGI_KEY" > ~/.secrets/pi/kagi.key
 chmod 600 ~/.secrets/pi/mcp.json ~/.secrets/pi/kagi.key
 
 # 2. Link the tracked config in, plus the real mcp.json where Pi looks for it.
 ln -sfn ~/nixos-config/pi/settings.json             ~/.pi/agent/settings.json
 ln -sfn ~/nixos-config/pi/models.json               ~/.pi/agent/models.json
+ln -sfn ~/nixos-config/pi/AGENTS.md                 ~/.pi/agent/AGENTS.md
 ln -sfn ~/nixos-config/pi/extensions/halogen-npu.ts ~/.pi/agent/extensions/halogen-npu.ts
 ln -sfn ~/.secrets/pi/mcp.json                      ~/.pi/agent/mcp.json
 
@@ -136,8 +149,31 @@ pi mcp list   # both servers should report connected
 ```
 
 The links survive Pi's own writes, so this is a one-time setup per host. Re-run
-the four `ln -sfn` lines only to point `~/.pi/agent` at a different checkout, or
+the five `ln -sfn` lines only to point `~/.pi/agent` at a different checkout, or
 after moving a linked file by hand.
+
+## 12. rtk config (`~/.config/rtk`)
+
+`rtk` is the proxy Pi's `pi-rtk-optimizer` package rewrites bash commands into
+(section 11). Its config is tracked for the same reason: a rule decided on one
+host shows up in `git diff` and reaches the others. `rtk config recall ...`
+rewrites the file in place, which follows the link into the repo just like Pi's
+own writes.
+
+- `rtk/config.toml` → `~/.config/rtk/config.toml`. `hooks.exclude_commands`
+  keeps `grep`, `rg` and `find` raw: about 40% of rewrites for under 5% of the
+  tokens saved, and the `limits` caps dropped hits without saying so.
+  `retriever.mode = "sqlite"` is what makes a
+  `[full output: rtk recall <hash>]` hint recoverable.
+
+`filters.toml` stays untracked. It carries no filters yet, and rtk gates custom
+filters on a content hash: a tracked file that later changes stops applying silently
+until `rtk trust` is re-run, which is worse than leaving it local.
+
+```bash
+mkdir -p ~/.config/rtk
+ln -sfn ~/nixos-config/rtk/config.toml ~/.config/rtk/config.toml
+```
 
 ## Daily rebuild flow
 
