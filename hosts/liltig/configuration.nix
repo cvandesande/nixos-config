@@ -50,6 +50,9 @@ in
     ACTION=="add", SUBSYSTEM=="drm", KERNELS=="0000:c2:00.0", ATTR{device/power_dpm_force_performance_level}="manual", ATTR{device/pp_dpm_fclk}="7"
   '';
 
+  # btop is built against rocm-smi here, so the Radeon iGPU gets a panel; rocm-smi cannot talk to the Intel iGPUs in nomad and nuc, so they keep the plain build the profile installs.
+  devToolchain.btop.package = pkgs.btop-rocm;
+
   # Rootless podman, still a system unit: linger provides /run/user/1000 and the static uid resolves RequiresMountsFor=/run/user/<uid>/containers.
   users.users.cvandesande = {
     uid = 1000;
