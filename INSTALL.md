@@ -46,8 +46,10 @@ Confirm the selected host and inspect its disk config before running Disko:
 ```bash
 echo "$HOST"
 cat "hosts/$HOST/configuration.nix"
-ls -l /dev/disk/by-path/ | grep -E "nvme|ata"   # the device line above must appear here
-lsblk -o NAME,SIZE,MODEL,SERIAL,TRAN            # and it is the disk you mean, not just the bay
+# the device from configuration.nix must appear here
+ls -l /dev/disk/by-path/ | grep -E "nvme|ata"
+# and this is the disk you mean, not just the bay
+lsblk -o NAME,SIZE,MODEL,SERIAL,TRAN
 ```
 
 `device` uses `/dev/disk/by-path/` (the PCI slot) rather than `/dev/disk/by-id/`,
@@ -64,12 +66,13 @@ the difference between installing on the intended disk and wiping the other one.
 
 ## 4. Partition, format, and mount
 
-For `liltig`, `nuc` and `nomad`, this partitions the disk, creates LUKS, formats Btrfs,
-creates swap, and mounts the new system. For `nix-vm-*`, this creates only an EFI
-system partition and a plain ext4 root filesystem.
+For `liltig`, `nuc` and `nomad`, this partitions the disk, creates LUKS,
+formats Btrfs, creates swap, and mounts the new system. For `nix-vm-*`, this
+creates only an EFI system partition and a plain ext4 root filesystem.
 
 ```bash
-nix --experimental-features "nix-command flakes" run github:nix-community/disko -- \
+nix --experimental-features "nix-command flakes" \
+  run github:nix-community/disko -- \
   --mode disko \
   --flake ".#$HOST"
 ```
@@ -431,12 +434,15 @@ script refuses `sudo`):
 ```bash
 git clone https://github.com/antoinecellerier/speaker-tuning-to-easyeffects
 cd speaker-tuning-to-easyeffects
-nix-shell -p p7zip "python3.withPackages (p: [ p.numpy p.scipy p.rich p.rich-argparse ])"
+nix-shell -p p7zip \
+  "python3.withPackages (p: [ p.numpy p.scipy p.rich p.rich-argparse ])"
 python3 dolby_to_easyeffects.py --doctor
-python3 dolby_to_easyeffects.py ~/Downloads/Framework_Laptop_13_Intel_Core_Ultra_Series3_driver_bundle_W11_v101_2026_06_05.exe --autoload
+python3 dolby_to_easyeffects.py \
+  ~/Downloads/Framework_Laptop_13_*_driver_bundle_*.exe --autoload
 ```
 
-Put the path before `--autoload`: the flag takes an optional preset name and
+The glob stands for the dated bundle name that page offers. Put the path before
+`--autoload`: the flag takes an optional preset name and
 would swallow the path. The run writes `Dolby-Balanced`, `Dolby-Detailed` and
 `Dolby-Warm` to `~/.local/share/easyeffects/output` and autoloads `Dolby-Balanced`
 on the built-in speakers.
@@ -449,4 +455,3 @@ If the sound is quieter than expected, re-run with `--enable autogain`; if it is
 harsh, disable filters (see the project's `docs/troubleshooting.md`).
 `--uninstall` removes what the script installed. The effect can also apply to
 HDMI, Bluetooth and headsets until you change the EasyEffects output setup.
-
