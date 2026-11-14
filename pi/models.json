@@ -40,6 +40,58 @@
         }
       ]
     },
+    "strata": {
+      "name": "Strata (nomad Arc B390)",
+      "baseUrl": "http://127.0.0.1:8081/v1",
+      "api": "openai-completions",
+      "apiKey": "!tr -d '\\n' </home/cvandesande/strata-data/state/api-key",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens"
+      },
+      "models": [
+        {
+          "id": "qwen3.8-flash-next-coder-iq1_m",
+          "name": "Coder IQ1_M (B390)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null
+          },
+          "contextWindow": 262144,
+          "maxTokens": 2048,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "input": [
+            "text"
+          ]
+        },
+        {
+          "id": "qwen3.8-flash-next-gyro-gyro-m",
+          "name": "Gyro-M (B390)",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null
+          },
+          "contextWindow": 262144,
+          "maxTokens": 2048,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "input": [
+            "text"
+          ]
+        }
+      ]
+    },
     "halogen": {
       "name": "Halogen (liltig)",
       "baseUrl": "http://liltig:8731/v1",
