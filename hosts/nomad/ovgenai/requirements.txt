@@ -1,0 +1,12 @@
+# Pinned engine for the ovgenai service (hosts/nomad/openvino.nix).
+#
+# These are the versions the card example was verified with on nomad's NPU on 2026-11-14:
+# openvino 2026.4.1 / genai 2026.4.1.0, which is what the Qwen3-30B-A3B-nf4-ov export names.
+# nixpkgs is not an option here: it carries openvino 2026.1.2 and intel-npu-driver 1.28.0, and
+# this NF4 MoE export needs the 2026.4 runtime plus the 1.38 NPU userspace driver.
+# `uv pip install -r` this file into /var/lib/ovgenai/venv (see the ovgenai-init unit).
+openvino==2026.4.1
+openvino-tokenizers==2026.4.1.0
+openvino-genai==2026.4.1.0
+fastapi==0.163.0
+uvicorn==0.54.0

@@ -1,45 +1,6 @@
 {
   "$schema": "https://pi.dev/schemas/models.schema.json",
   "providers": {
-    "openvino": {
-      "name": "OpenVINO (nomad NPU)",
-      "baseUrl": "http://127.0.0.1:8000/v3",
-      "api": "openai-completions",
-      "apiKey": "none",
-      "compat": {
-        "supportsStore": false,
-        "supportsDeveloperRole": false,
-        "supportsReasoningEffort": false,
-        "maxTokensField": "max_tokens",
-        "thinkingFormat": "qwen-chat-template"
-      },
-      "models": [
-        {
-          "id": "qwen3-8b",
-          "name": "Qwen3-8B (NPU)",
-          "reasoning": true,
-          "contextWindow": 32768,
-          "maxTokens": 4096,
-          "samplingParams": {
-            "temperature": 0.6,
-            "top_p": 0.95,
-            "top_k": 20
-          },
-          "samplingParamsByThinkingLevel": {
-            "off": {
-              "temperature": 0.7,
-              "top_p": 0.8,
-              "top_k": 20
-            }
-          },
-          "thinkingLevelMap": {
-            "minimal": null,
-            "low": null,
-            "high": null
-          }
-        }
-      ]
-    },
     "strata": {
       "name": "Strata (nomad Arc B390)",
       "baseUrl": "http://127.0.0.1:8081/v1",
@@ -104,6 +65,38 @@
             "text",
             "image"
           ]
+        }
+      ]
+    },
+    "ovgenai": {
+      "name": "ovgenai (nomad NPU)",
+      "baseUrl": "http://127.0.0.1:8020/v1",
+      "api": "openai-completions",
+      "apiKey": "none",
+      "compat": {
+        "supportsStore": false,
+        "supportsDeveloperRole": false,
+        "supportsReasoningEffort": false,
+        "maxTokensField": "max_tokens",
+        "thinkingFormat": "qwen"
+      },
+      "models": [
+        {
+          "id": "qwen3-30b",
+          "name": "Qwen3-30B-A3B NF4 (NPU)",
+          "reasoning": true,
+          "contextWindow": 12288,
+          "maxTokens": 2048,
+          "cost": {
+            "input": 0,
+            "output": 0,
+            "cacheRead": 0,
+            "cacheWrite": 0
+          },
+          "input": [
+            "text"
+          ],
+          "reasoningDefault": "high"
         }
       ]
     }

@@ -10,7 +10,7 @@
   imports = [
     inputs.nixos-hardware.nixosModules.framework-intel-core-ultra-series3
     ./strata.nix
-    ./openvino.nix
+    ./ovgenai.nix
     ../../modules/roles/workstation.nix
     # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko
     # is the only consumer -- re-run it after moving a drive.
