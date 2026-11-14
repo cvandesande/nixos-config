@@ -7,11 +7,9 @@
   "defaultProvider": "halogen",
   "defaultModel": "halogen-qwen3.8-flash-next",
   "packages": [
-    "npm:pi-rtk-optimizer",
     "npm:pi-lens"
   ],
   "extensionChangelogVersions": {
-    "{\"source\":\"npm:pi-rtk-optimizer\",\"scope\":\"user\"}": "0.9.0",
     "{\"source\":\"npm:pi-lens\",\"scope\":\"user\"}": "4.5.0"
   }
 }
