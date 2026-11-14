@@ -53,8 +53,8 @@
       },
       "models": [
         {
-          "id": "qwen3.8-flash-next-coder-iq1_m",
-          "name": "Coder IQ1_M (B390)",
+          "id": "qwen3.8-flash-next-iq2_xs",
+          "name": "IQ2_XS (B390)",
           "reasoning": true,
           "thinkingLevelMap": {
             "off": null
