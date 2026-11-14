@@ -311,7 +311,7 @@ def models():
             {
                 "id": MODEL_NAME,
                 "object": "model",
-                "created": int(time.time()),
+                "created": time.time_ns() // 10**9,
                 "owned_by": "openvino-genai",
                 "root": MODEL_PATH,
             }
@@ -335,7 +335,7 @@ def chat(req: ChatRequest):
         small["msg_chars"] = [len(m.text()) for m in req.messages]
         print("REQ " + json.dumps(small, ensure_ascii=False)[:400], flush=True)
     cid = f"chatcmpl-{uuid.uuid4().hex[:24]}"
-    created = int(time.time())
+    created = time.time_ns() // 10**9
     gc = gen_config(req)
     thinking = wants_thinking(req)
     prompt = render(req, thinking)
