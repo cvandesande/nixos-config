@@ -70,25 +70,6 @@
           "input": [
             "text"
           ]
-        },
-        {
-          "id": "qwen3.8-flash-next-gyro-gyro-m",
-          "name": "Gyro-M (B390)",
-          "reasoning": true,
-          "thinkingLevelMap": {
-            "off": null
-          },
-          "contextWindow": 262144,
-          "maxTokens": 2048,
-          "cost": {
-            "input": 0,
-            "output": 0,
-            "cacheRead": 0,
-            "cacheWrite": 0
-          },
-          "input": [
-            "text"
-          ]
         }
       ]
     },
