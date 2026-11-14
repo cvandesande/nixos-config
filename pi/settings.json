@@ -7,7 +7,8 @@
   "defaultProvider": "halogen",
   "defaultModel": "halogen-qwen3.8-flash-next",
   "packages": [
-    "npm:pi-lens"
+    "npm:pi-lens",
+    "npm:pi-token-speed"
   ],
   "extensionChangelogVersions": {
     "{\"source\":\"npm:pi-lens\",\"scope\":\"user\"}": "4.5.0"
