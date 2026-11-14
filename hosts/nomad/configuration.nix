@@ -12,7 +12,8 @@
     ./strata.nix
     ./openvino.nix
     ../../modules/roles/workstation.nix
-    # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko is the only consumer -- re-run it after moving a drive.
+    # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko
+    # is the only consumer -- re-run it after moving a drive.
     (import ../../modules/storage/luks-btrfs.nix {
       device = "/dev/disk/by-path/pci-0000:01:00.0-nvme-1";
       swapSize = "16G";
@@ -38,7 +39,8 @@
   # Speaker correction: see INSTALL.md section 10.
   environment.systemPackages = [ pkgs.easyeffects ];
 
-  # A user service, not XDG autostart: EasyEffects aborts whenever PipeWire disconnects, and autostart units are never restarted.
+  # A user service, not XDG autostart: EasyEffects aborts whenever PipeWire disconnects, and
+  # autostart units are never restarted.
   systemd.user.services.easyeffects = {
     description = "Easy Effects";
     wantedBy = [ "graphical-session.target" ];
@@ -61,7 +63,8 @@
 
   workstation.zfs.enable = false;
 
-  # power-profiles-daemon ignores AC changes, so the profile is picked from the mains state at boot and on every (un)plug.
+  # power-profiles-daemon ignores AC changes, so the profile is picked from the mains state at
+  # boot and on every (un)plug.
   systemd.services.power-profile-auto = {
     description = "Set power profile from AC state";
     after = [ "power-profiles-daemon.service" ];
@@ -80,8 +83,9 @@
     SUBSYSTEM=="power_supply", ATTR{type}=="Mains", TAG+="systemd", ENV{SYSTEMD_WANTS}+="power-profile-auto.service upower-ac-resync.service"
   '';
 
-  # After resume UPower can read the old AC value on the unplug event and never look again, so OnBattery stays false and PowerDevil uses its AC lid action.
-  # Once the value settles, replay the event if UPower disagrees with the kernel (no disagreement, no replay, so no loop).
+  # After resume UPower can read the old AC value on the unplug event and never look again, so
+  # OnBattery stays false and PowerDevil uses its AC lid action. Once the value settles, replay
+  # the event if UPower disagrees with the kernel (no disagreement, no replay, so no loop).
   systemd.services.upower-ac-resync = {
     description = "Resync UPower with the kernel AC state";
     after = [ "upower.service" ];
@@ -97,8 +101,9 @@
     '';
   };
 
-  # After resume ucsi_acpi misses notifications (-110), so a USB-C port stays online once the charger is gone and OnBattery stays false; reloading re-reads the ports.
-  # Upstream: https://github.com/FrameworkComputer/SoftwareFirmwareIssueTracker/issues/286
+  # After resume ucsi_acpi misses notifications (-110), so a USB-C port stays online once the
+  # charger is gone and OnBattery stays false; reloading re-reads the ports. Upstream:
+  # https://github.com/FrameworkComputer/SoftwareFirmwareIssueTracker/issues/286
   systemd.services.ucsi-resume = {
     description = "Reload ucsi_acpi after resume";
     wantedBy = [ "suspend.target" ];
@@ -112,14 +117,16 @@
     };
   };
 
-  # UPower owns the charge limit: KDE sets it once and never re-applies it (KDE#450551), and the EC resets it to 100% at boot.
-  # "_" skips the start threshold, which this battery does not expose.
+  # UPower owns the charge limit: KDE sets it once and never re-applies it (KDE#450551), and the
+  # EC resets it to 100% at boot. "_" skips the start threshold, which this battery does not
+  # expose.
   services.udev.extraHwdb = ''
     battery:*:FRANEDA:dmi:*
      CHARGE_LIMIT=_,85
   '';
 
-  # UPower writes the limit only while the threshold is enabled (state lives in /var/lib/upower), so it is re-asserted here to stay declarative.
+  # UPower writes the limit only while the threshold is enabled (state lives in /var/lib/upower),
+  # so it is re-asserted here to stay declarative.
   systemd.services.upower-charge-limit = {
     description = "Enable the UPower battery charge limit";
     after = [ "upower.service" ];

@@ -2,7 +2,8 @@
 
 let
   # Neither halogen (:8731) nor Open WebUI (:8788) has a network gate, so these NICs are the gate.
-  # Named NICs, not `en+`/`wl+` wildcards, and anything unlisted is refused; the trailing `+` is a prefix, so the USB dongle survives a replug.
+  # Named NICs, not `en+`/`wl+` wildcards, and anything unlisted is refused; the trailing `+` is a
+  # prefix, so the USB dongle survives a replug.
   lanIfaces = [
     "enp191s0" # onboard ethernet
     "enp196s0+" # USB-C ethernet dongle; trailing `+` is iptables prefix matching
@@ -16,7 +17,8 @@ in
     (import ./halogen.nix { inherit lanIfaces; })
     (import ./openwebui.nix { inherit lanIfaces; })
     ../../modules/roles/workstation.nix
-    # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko is the only consumer -- re-run it after moving a drive.
+    # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko
+    # is the only consumer -- re-run it after moving a drive.
     (import ../../modules/storage/luks-btrfs.nix {
       device = "/dev/disk/by-path/pci-0000:c1:00.0-nvme-1";
       swapSize = "32G";
@@ -44,21 +46,25 @@ in
 
   systemd.services.tuned-ppd.unitConfig.ConditionPathExists = "/etc/tuned/ppd.conf";
 
-  # Pin the fabric clock (row 7 = 2000 MHz) or halogen's NPU corrupts results and can hang the host (ROCm/TheRock#8709); keyed on the GPU's PCI function.
+  # Pin the fabric clock (row 7 = 2000 MHz) or halogen's NPU corrupts results and can hang the
+  # host (ROCm/TheRock#8709); keyed on the GPU's PCI function.
   services.udev.extraRules = ''
     ACTION=="add", SUBSYSTEM=="drm", KERNELS=="0000:c2:00.0", ATTR{device/power_dpm_force_performance_level}="manual", ATTR{device/pp_dpm_fclk}="7"
   '';
 
-  # btop is built against rocm-smi here, so the Radeon iGPU gets a panel; rocm-smi cannot talk to the Intel iGPUs in nomad and nuc, so they keep the plain build the profile installs.
+  # btop is built against rocm-smi here, so the Radeon iGPU gets a panel; rocm-smi cannot talk to
+  # the Intel iGPUs in nomad and nuc, so they keep the plain build the profile installs.
   devToolchain.btop.package = pkgs.btop-rocm;
 
-  # Rootless podman, still a system unit: linger provides /run/user/1000 and the static uid resolves RequiresMountsFor=/run/user/<uid>/containers.
+  # Rootless podman, still a system unit: linger provides /run/user/1000 and the static uid
+  # resolves RequiresMountsFor=/run/user/<uid>/containers.
   users.users.cvandesande = {
     uid = 1000;
     linger = true;
   };
 
-  # Nothing prunes rootless storage, so pull = "always" piles up each superseded :latest; dangling images only, named images and volumes survive.
+  # Nothing prunes rootless storage, so pull = "always" piles up each superseded :latest; dangling
+  # images only, named images and volumes survive.
   systemd.user.services.podman-dangling-prune = {
     description = "Remove dangling container images";
     serviceConfig = {
