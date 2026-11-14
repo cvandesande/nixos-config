@@ -1,7 +1,7 @@
 { inputs, pkgs, ... }:
 
 let
-  # None of halogen (:8731), strixDash (:8787) or Open WebUI (:8788) has a network gate, so these NICs are the gate.
+  # Neither halogen (:8731) nor Open WebUI (:8788) has a network gate, so these NICs are the gate.
   # Named NICs, not `en+`/`wl+` wildcards, and anything unlisted is refused; the trailing `+` is a prefix, so the USB dongle survives a replug.
   lanIfaces = [
     "enp191s0" # onboard ethernet
@@ -13,7 +13,6 @@ in
   imports = [
     inputs.nixos-hardware.nixosModules.framework-desktop-amd-ai-max-300-series
     ./claude-router.nix
-    (import ./strixdash.nix { inherit lanIfaces; })
     (import ./halogen.nix { inherit lanIfaces; })
     (import ./openwebui.nix { inherit lanIfaces; })
     ../../modules/roles/workstation.nix
