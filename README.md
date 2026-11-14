@@ -122,8 +122,10 @@ Pi looks for it, and `kagi.key` is read in place by a header command:
 
 Everything per-host and regenerable stays in `~/.pi/agent` untracked: `install/`
 (Pi's self-updating release plus its own `rg`), `npm/node_modules` (`settings.json`
-`packages` names `npm:pi-lens` and `npm:pi-rtk-optimizer`; Pi installs them),
-`sessions/`, `auth.json`, `mcp-auth.json`, `models-store.json`.
+`packages` names `npm:pi-lens`; Pi installs it), `sessions/`, `auth.json`,
+`mcp-auth.json`, `models-store.json`, and `extensions/rtk.ts`, the bash rewriter
+rtk writes for itself (section 12) — regenerated with rtk, so tracking it here
+would only produce diffs on every rtk release.
 
 On a new host, after installing Pi itself (its installer owns `~/.pi/agent/install`
 and the `~/.local/bin/pi` symlink) and cloning this repo:
@@ -145,6 +147,11 @@ ln -sfn ~/nixos-config/pi/AGENTS.md                 ~/.pi/agent/AGENTS.md
 ln -sfn ~/nixos-config/pi/extensions/halogen-npu.ts ~/.pi/agent/extensions/halogen-npu.ts
 ln -sfn ~/.secrets/pi/mcp.json                      ~/.pi/agent/mcp.json
 
+# 3. The bash rewriter is rtk's file, not the repo's, so rtk installs it. Without
+#    it nothing is rewritten and nothing complains. It only writes that one file:
+#    it never touches the tracked AGENTS.md. Re-run it after an rtk upgrade.
+rtk init --agent pi -g
+
 pi mcp list   # both servers should report connected
 ```
 
@@ -154,8 +161,14 @@ after moving a linked file by hand.
 
 ## 12. rtk config (`~/.config/rtk`)
 
-`rtk` is the proxy Pi's `pi-rtk-optimizer` package rewrites bash commands into
-(section 11). Its config is tracked for the same reason: a rule decided on one
+`rtk init --agent pi -g` writes `~/.pi/agent/extensions/rtk.ts`: a 137-line shim
+that hands every bash command to `rtk rewrite` and keeps the rewritten form when
+`rtk rewrite` exits 0 or 3. That rewrite table is why the output of a `bash` call
+can come back condensed (section 11). Check the shim loads with
+`pi -e ~/.pi/agent/extensions/rtk.ts --no-session -p ok`; a missing or pre-0.23
+rtk prints a disable notice and leaves every command raw, which is harmless.
+
+rtk's own config is tracked for the same reason: a rule decided on one
 host shows up in `git diff` and reaches the others. `rtk config recall ...`
 rewrites the file in place, which follows the link into the repo just like Pi's
 own writes.
