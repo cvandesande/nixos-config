@@ -23,7 +23,7 @@
 # sometimes stalls 40-61 s at prompt layer 0 and aborts (SIGABRT, exit -6); the next request works, so
 # warm it up and keep the container up between sessions.
 #
-# Prefill, 2026-11-14 (numbers, dead ends and caveats: HANDOFF.md §1b). INTEL.md gates the fused int8
+# Prefill, 2026-11-14. INTEL.md gates the fused int8
 # prompt experts on "a Battlemage GPU (B70, B580, B570, detected by device architecture)" and Xe3 is
 # none of those, so `auto` leaves the FP16 chain here; forcing them is 4K 329 -> 432 tok/s, TTFT
 # 12.9 -> 9.9 s, decode unchanged. They then cost ~4000 expert slots, so pair them with
