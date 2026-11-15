@@ -4,12 +4,17 @@
 # 127.0.0.1:8081/v1, started by llm-start, and no key in the store (Strata keeps its own under /data).
 #
 # Memory. Strata plans from host RAM and xe pages aren't charged to the cgroup, so a container
-# --memory limit does nothing here, and experts are mirrored in *pinned* host memory. Serving Q2_0
-# since 2026-11-15: a 37.6 GB native shard plus the same 28.8 GB PLE shard, so 1.6 GB under IQ2_XS on
-# weights, but its slot count, mirror and output quality are unmeasured here -- CONTEXT=256k is
-# inherited from IQ2_XS and has not been re-checked against Q2_0. The numbers below are IQ2_XS's, kept
-# as the reference it was sized against: it is the largest pack that afforded the 256K window (39.2 GB
-# of weights + ~5.6 GiB of k8v4 KV + the OS leaves ~13 GiB spare) and it kept all 512 experts, so it
+# --memory limit does nothing here, and experts are mirrored in *pinned* host memory. IQ2_XS again:
+# Q2_0 was tried on 2026-11-15 and is slower here, not faster. Its 37.6 GB native shard plus the same
+# 28.8 GB PLE shard is 1.6 GB under IQ2_XS, only 4% fewer expert bytes per token (1.382 MB against
+# 1.443 MB per layer-expert), and the fused int8 prompt experts do not cover Q2_0's gate/up rows on
+# Xe3 -- the engine logs "gate/up type 42, down type 42 -> int8 path no" for all 48 layers, where
+# IQ2_XS answers yes for its 34 IQ2_S layers, so every layer falls back to the FP16 chain. Same flags,
+# same probe: 4K 355 tok/s / TTFT 11.8 s / decode 12.9 against 432 / 9.9 s / 16.9 for IQ2_XS
+# (~/strata-bench/probes.jsonl, label q2_0-live). MODELS.md's "Q2_0 = fastest" is CUDA, where MMQ has
+# a Q2_0 kernel. The numbers below are IQ2_XS's, the reference the sizing was built against: it is
+# the largest pack that afforded the 256K window (39.2 GB of weights + ~5.6 GiB of k8v4 KV + the OS
+# leaves ~13 GiB spare) and it kept all 512 experts, so it
 # was better than Coder outside code and for non-English. IQ3_XXS (47 GB) leaves too little headroom
 # at 256K. Both packs stay on disk, so a switch back is one line.
 #
@@ -66,7 +71,7 @@ let
   user = "cvandesande";
   home = "/home/${user}";
   family = "qwen";
-  model = "Q2_0"; # a symlink under ~/models pointing at the folder holding the shards
+  model = "IQ2_XS"; # a symlink under ~/models pointing at the folder holding the shards
   modelsDir = "${home}/models/${model}";
   dataDir = "${home}/strata-data";
 in
