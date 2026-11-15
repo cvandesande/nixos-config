@@ -4,15 +4,29 @@
 # 127.0.0.1:8081/v1, started by llm-start, and no key in the store (Strata keeps its own under /data).
 #
 # Memory. Strata plans from host RAM and xe pages aren't charged to the cgroup, so a container
-# --memory limit does nothing here, and experts are mirrored in *pinned* host memory. IQ2_XS is the
-# largest pack that affords the 256K window: 39.2 GB of weights + ~5.6 GiB of k8v4 KV + the OS leaves
-# ~13 GiB spare, and it keeps all 512 experts, so it is better than Coder outside code and for
-# non-English. IQ3_XXS (47 GB) leaves too little headroom at 256K.
+# --memory limit does nothing here, and experts are mirrored in *pinned* host memory. Serving Q2_0
+# since 2026-11-15: a 37.6 GB native shard plus the same 28.8 GB PLE shard, so 1.6 GB under IQ2_XS on
+# weights, but its slot count, mirror and output quality are unmeasured here -- CONTEXT=256k is
+# inherited from IQ2_XS and has not been re-checked against Q2_0. The numbers below are IQ2_XS's, kept
+# as the reference it was sized against: it is the largest pack that afforded the 256K window (39.2 GB
+# of weights + ~5.6 GiB of k8v4 KV + the OS leaves ~13 GiB spare) and it kept all 512 experts, so it
+# was better than Coder outside code and for non-English. IQ3_XXS (47 GB) leaves too little headroom
+# at 256K. Both packs stay on disk, so a switch back is one line.
 #
 # Behaviour. Keep the image entrypoint: `strata launch --no-tui` daemonizes, PID 1 exits and the
 # container dies as Exited (0) minutes later with no error logged. The first request after a start
 # sometimes stalls 40-61 s at prompt layer 0 and aborts (SIGABRT, exit -6); the next request works, so
 # warm it up and keep the container up between sessions.
+#
+# Prefill, 2026-11-14 (numbers, dead ends and caveats: HANDOFF.md §1b). INTEL.md gates the fused int8
+# prompt experts on "a Battlemage GPU (B70, B580, B570, detected by device architecture)" and Xe3 is
+# none of those, so `auto` leaves the FP16 chain here; forcing them is 4K 329 -> 432 tok/s, TTFT
+# 12.9 -> 9.9 s, decode unchanged. They then cost ~4000 expert slots, so pair them with
+# STRATA_PREFILL_LEND_PCT=0, which returns the prompt loan and lands the full 24576 slots.
+# STRATA_PREFILL_TIMING=1 (undocumented; the string is in the 0.1.59-sycl binary) has been read and
+# taken out: over a 9878-token prompt the GPU spends 55% of prompt time in the gate/up expert GEMM,
+# 15% dequantizing, 6.6% in gemm down and ~10% in QSA, so what is left of the prefill gap is kernel
+# efficiency on Xe3, not a knob. Raw numbers: ~/strata-bench/prefill-timing.tsv.
 #
 # Numbers behind the env. 256K is the model's own window and genuinely runs here: a 134k prompt
 # answered correctly at 248 tok/s prefill and reused 131k of its 134k tokens on the repeat. k8v4 puts
@@ -23,9 +37,13 @@
 # mirrored and read per token, which is what stalls reasoning. STRATA_SET is `--set` only and
 # presets merge per key, so an empty value cannot clear a stored one (--delete-preset does);
 # expert-cache=auto is DETAILS.md's default and lands on 12288 slots here, so 24576 is pinned
-# explicitly. `spec=6` and `STRATA_KV_GROW=1` (the documented `--kv-grow`, an opt-in setting read by
-# getenv in the SYCL backend) were set to save memory and lift tok/s and desktop responsiveness, and
-# both reach the engine on every start. STRATA_WATCHDOG_S=600 keeps a cold prefill from being
+# explicitly, and it only lands when the RAM is genuinely free at start: the engine plans from
+# MemAvailable (upstream #2412), so a start with the desktop busy has landed 13266 slots and a
+# 16.85 GiB mirror, which measures 3-4x slower on a 4K prompt. Restart when idle; no start-time
+# guard here on purpose. `spec=6` and `STRATA_KV_GROW=1` (the documented `--kv-grow`) were set to save
+# memory and lift tok/s and desktop responsiveness; spec=6 reaches the engine, while STRATA_KV_GROW=1
+# is inert here — every start logs `--kv-grow is off (one GPU, a profile, the whole K/V in VRAM,
+# every expert in RAM, no --batch, --vram-elastic or --peer-device)`. STRATA_WATCHDOG_S=600 keeps a cold prefill from being
 # aborted (#29), and the last two are INTEL_ARC.md's Arc settings because the image has no
 # strata-sycl.sh (#515).
 #
@@ -48,7 +66,7 @@ let
   user = "cvandesande";
   home = "/home/${user}";
   family = "qwen";
-  model = "IQ2_XS"; # a symlink under ~/models pointing at the folder holding the shards
+  model = "Q2_0"; # a symlink under ~/models pointing at the folder holding the shards
   modelsDir = "${home}/models/${model}";
   dataDir = "${home}/strata-data";
 in
@@ -81,7 +99,7 @@ in
         TUNE = "skip";
         ALLOW_DOWNLOAD = "0"; # /models is read-only: a download would fetch tens of GB
         KV = "k8v4";
-        STRATA_SET = "expert-cache=24576 spec=6 STRATA_KV_GROW=1 STRATA_WATCHDOG_S=600 STRATA_VERIFY_NO_HOST=1 STRATA_VERIFY_DEVICE_PLAN=1 SYCL_CACHE_PERSISTENT=0";
+        STRATA_SET = "expert-cache=24576 spec=6 STRATA_KV_GROW=1 STRATA_WATCHDOG_S=600 STRATA_VERIFY_NO_HOST=1 STRATA_VERIFY_DEVICE_PLAN=1 SYCL_CACHE_PERSISTENT=0 STRATA_PREFILL_MMQ=1 STRATA_PREFILL_LEND_PCT=0";
         VISION = "off"; # no SYCL vision reader
       };
       extraOptions = [
