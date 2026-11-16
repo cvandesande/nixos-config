@@ -11,6 +11,6 @@
     "npm:pi-token-speed"
   ],
   "extensionChangelogVersions": {
-    "{\"source\":\"npm:pi-lens\",\"scope\":\"user\"}": "4.5.0"
+    "{\"source\":\"npm:pi-lens\",\"scope\":\"user\"}": "4.5.1"
   }
 }
