@@ -104,7 +104,7 @@ in
         TUNE = "skip";
         ALLOW_DOWNLOAD = "0"; # /models is read-only: a download would fetch tens of GB
         KV = "k8v4";
-        STRATA_SET = "expert-cache=24576 spec=6 STRATA_KV_GROW=1 STRATA_WATCHDOG_S=600 STRATA_VERIFY_NO_HOST=1 STRATA_VERIFY_DEVICE_PLAN=1 SYCL_CACHE_PERSISTENT=0 STRATA_PREFILL_MMQ=1 STRATA_PREFILL_LEND_PCT=0";
+        STRATA_SET = "expert-cache=24576 spec=6 mtp-max-t=8 STRATA_KV_GROW=1 STRATA_WATCHDOG_S=600 STRATA_VERIFY_NO_HOST=1 STRATA_VERIFY_DEVICE_PLAN=1 SYCL_CACHE_PERSISTENT=0 STRATA_PREFILL_MMQ=1 STRATA_PREFILL_LEND_PCT=0";
         VISION = "off"; # no SYCL vision reader
       };
       extraOptions = [
