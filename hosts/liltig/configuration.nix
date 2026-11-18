@@ -16,6 +16,7 @@ in
     ./claude-router.nix
     (import ./halogen.nix { inherit lanIfaces; })
     (import ./openwebui.nix { inherit lanIfaces; })
+    ./stt-proxy.nix
     ../../modules/roles/workstation.nix
     # by-path (PCI slot), not by-id: by-id is the drive's serial and this repo is public. Disko
     # is the only consumer -- re-run it after moving a drive.

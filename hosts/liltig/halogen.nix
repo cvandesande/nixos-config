@@ -4,36 +4,22 @@
 # halogen on liltig's NPU: the local Qwen inference server on :8731, rootless podman, started by
 # llm-start. Open WebUI (openwebui.nix) fronts it, and pi's classifier calls it directly.
 #
-# Models. Flash is served from the checkpoint mounted read-only at /models, with three more loaded
-# beside it, all named in the one attrset below so llm-npu-fetch cannot drift: decider-4b, which
-# outlives the guard because pi's classifier (pi/extensions/halogen-npu.ts) answers on it too;
-# flux2-klein-4b, which answers image requests; and qwen3-embedding-0.6b, the knowledge-search
-# model Open WebUI uses, ~0.8 GiB locked. HALOGEN_VISION_TOWER loads the 857 MB vision tower beside
-# the checkpoint: unset, an image is a 400 and text behaviour is bit-identical.
+# Models. Flash plus four NPU models, all named in npuEnv below so llm-npu-fetch cannot drift:
+# decider-4b, which pi's classifier answers on; qwen3-embedding-0.6b for knowledge search; and the
+# speech pair behind the mic and speaker -- ASR on the NPU, its vocoder on the CPU, both the 1.7B
+# of their pair (naming both sizes is refused). The pair stays locked at ~4 GiB and ~5 GiB, so it
+# and the embedder share one pool and the driver can answer ret -28; the server closes the idle
+# parts and retries, answer unchanged.
 #
-# Agent guard. A preview and loud here: ordinary Read results scored 0.60 `Controversial` against a
-# 0.25 flag, and real Write/Edit/Bash calls got held, so it is off. `watch` logs verdicts without
-# holding, `hold` also stops the call.
-#
-# Records. Request records audit those flags, since the guard's log line gives a tool name, a byte
-# count and a score, never the text. One JSON line per finished request, and a full store drops
-# records rather than blocking one, so /records stays writable where /models is not.
-# HALOGEN_RECORD_TEXT keeps only the text the guard judges: with no API key on this port, prompts,
-# replies and thinking stay out.
-#
-# Volumes. /models is read-only apart from two read-write mounts nested over it: halogen writes
-# <dir>/halogen-npu.hnpw for an own checkpoint and fetches programs under npu/, and it re-does the
-# conversion after an update invalidates it, so writable there means a plain restart suffices.
-#
-# Commands. llm-npu-fetch needs a writable mount -- the container mounts /models :ro -- the clock
-# pinned, and llm-stop first; Ctrl-C once the files land. qwen3-embedding-0.6b came with the image's
-# huggingface_hub instead, and refetching it takes llm-stop too. llm-records lists the newest stores
-# and llm-guard puts today's guard flags beside the health counters.
+# Guard. Off: ordinary Read results scored 0.60 `Controversial` against a 0.25 flag and real
+# Write/Edit/Bash calls got held; `watch` logs verdicts without holding. Request records audit the
+# flags, since the guard's log line gives a tool name and a score, never the text.
 
 let
-  # NPU models served beside Flash, plus the guard's mode; one attrset so llm-npu-fetch can't drift.
+  # NPU models served beside Flash, plus the guard's mode; one attrset so
+  # llm-npu-fetch can't drift.
   npuEnv = {
-    HALOGEN_NPU_MODELS = "decider-4b,flux2-klein-4b,qwen3-embedding-0.6b";
+    HALOGEN_NPU_MODELS = "decider-4b,qwen3-embedding-0.6b,qwen3-asr-1.7b,qwen3-tts-1.7b-customvoice";
     HALOGEN_AGENT_GUARD = "off";
   };
   npuEnvArgs = lib.concatStringsSep " " (lib.mapAttrsToList (k: v: "-e ${k}=${v}") npuEnv);
@@ -61,13 +47,15 @@ in
       ports = [ "8731:8731" ]; # all addresses; the firewall rules below limit it to the LAN NIC
       volumes = [
         "${modelsDir}:/models:ro"
-        # Nested over that mount, and writable where /models is not.
+        # Nested over that mount, writable where /models is not: halogen writes its .hnpw and
+        # refetches programs here, so a conversion an update invalidates just needs a restart.
         "${modelsDir}/OvisOCR3:/models/OvisOCR3"
         "${modelsDir}/npu:/models/npu"
         "${recordDir}:/records"
       ];
       environment = npuEnv // {
         HALOGEN_RECORD_DIR = "/records";
+        # results and args only: with no API key on this port, prompts and replies stay out.
         HALOGEN_RECORD_TEXT = "results,args";
         HALOGEN_TEMPERATURE = "1.0";
         HALOGEN_TOP_P = "0.95";
@@ -77,6 +65,7 @@ in
         HALOGEN_CACHE_BRANCHES = "3";
         HALOGEN_KV8 = "1";
         HALOGEN_KV_POOL_POSITIONS = "925184";
+        # loads the 857 MB vision tower beside the checkpoint; unset, an image is a 400
         HALOGEN_VISION_TOWER = "1";
       };
       extraOptions = [
@@ -104,8 +93,12 @@ in
     llm-stop = "systemctl stop podman-halogen";
     llm-status = "systemctl is-active podman-halogen";
     llm-update = "podman pull ghcr.io/peonist-ai/halogen-flash-server:latest";
+    # needs a writable /models mount and llm-stop first; Ctrl-C once the files land
     llm-npu-fetch = "podman run --rm -v ${modelsDir}:/models -e HALOGEN_DOWNLOAD=peonist-ai/halogen-qwen3.8-flash-next ${npuEnvArgs} --device=/dev/kfd --device=/dev/dri --device=/dev/accel/accel0 --ipc=host ghcr.io/peonist-ai/halogen-flash-server:latest";
     llm-records = "ls -1t ${recordDir}/turns/*/*.jsonl 2>/dev/null | head -3";
+    # Voice without a browser: llm-say speaks a line to a WAV, llm-asr reads that file back.
+    llm-say = "curl -s localhost:8731/v1/audio/speech -H 'Content-Type: application/json' -d '{\"model\":\"qwen3-tts-1.7b-customvoice\",\"voice\":\"ryan\",\"input\":\"Hello from the NPU.\"}' -o /tmp/halogen-say.wav";
+    llm-asr = "curl -s localhost:8731/v1/audio/transcriptions -F model=qwen3-asr-1.7b -F file=@/tmp/halogen-say.wav";
     llm-guard = "curl -s localhost:8731/health | python3 -m json.tool | grep -A6 request_records; journalctl -u podman-halogen --since today --no-pager | grep 'agent guard' | tail -20";
   };
 }
