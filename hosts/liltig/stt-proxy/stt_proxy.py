@@ -311,14 +311,32 @@ class Handler(BaseHTTPRequestHandler):
         """Hand a speech request to halogen as it stands and send its audio straight back.
 
         No work on the JSON: halogen takes the same voice names Open WebUI sent and checks no key.
+        The length is logged the moment the request arrives, because the reply is only logged when
+        halogen finishes synthesising, and the gap between the two is the wait you hear.
         """
+        spoken, voice, note = 0, "?", ""
+        try:
+            payload = json.loads(body)
+            if isinstance(payload, dict):
+                spoken = len(str(payload.get("input", "")))
+                voice = str(payload.get("voice", "?"))
+            else:
+                note = ", body is not an object"
+        except ValueError:
+            note = ", body is not JSON"
+        log.info("speech in: voice %s, %d chars, %d B%s", voice, spoken, len(body), note)
         try:
             status, reply, rctype = post(
                 UPSTREAM.rstrip("/") + SPEECH_PATH,
                 body,
                 self.headers.get("Content-Type", "application/json"),
             )
-            log.info("speech -> upstream %d (%d B out, %d B back)", status, len(body), len(reply))
+            if status >= 400:
+                # Worth the bytes: a chunk halogen refuses is silent in the browser, and a whole
+                # reply loses that sentence without anyone seeing why.
+                log.info("speech -> upstream %d: %s", status, reply[:240].decode("utf-8", "replace"))
+            else:
+                log.info("speech -> upstream %d (%d B out, %d B back)", status, len(body), len(reply))
             self._send(status, reply, rctype)
         except Exception as exc:  # same rule as the transcription path above
             log.exception("speech relay failed")
