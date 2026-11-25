@@ -1,4 +1,9 @@
-{ inputs, pkgs, ... }:
+{
+  inputs,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   # Neither halogen (:8731) nor Open WebUI (:8788) has a network gate, so these NICs are the gate.
@@ -81,6 +86,27 @@ in
       Persistent = true;
     };
   };
+
+  # Talos, pkgs and extensions build only through BuildKit, so /bin/docker must be an engine.
+  virtualisation = {
+    # Asserts against docker.enable in the podman module; mkForce beats the profile's true.
+    podman.dockerCompat = lib.mkForce false;
+
+    docker = {
+      enable = true;
+      enableOnBoot = false; # socket-activated: starts when a build opens /run/docker.sock
+      storageDriver = "overlay2"; # docker's btrfs driver is deprecated upstream (86423b9)
+    };
+  };
+
+  # docker.socket is 0660 root:docker, so without the group every build step needs sudo.
+  users.groups.docker.members = [ "cvandesande" ];
+
+  # No @docker subvolume since 86423b9, so +C per inode is the only NOCOW this store can get.
+  systemd.tmpfiles.rules = [
+    "d /var/lib/docker 0711 root root -"
+    "h /var/lib/docker - - - - +C"
+  ];
 
   fileSystems."/home/cvandesande/mnt/whiterock" = {
     device = "whiterock:/zfspool/Downloads";
